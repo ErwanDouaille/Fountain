@@ -72,14 +72,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;G:\Documents\Libraries\opencv3.0\build\include;../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Users\douaille\Desktop\opencv3.0\build\include;../include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x86;../lib;G:\Documents\Libraries\opencv3.0\build\x86\vc11\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x86;../lib;C:\Users\douaille\Desktop\opencv3.0\build\x86\vc11\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>liblo.lib;winmm.lib;wsock32.lib;ws2_32.lib;libGina0.2.lib;opencv_ts300.lib;opencv_world300.lib;Kinect20.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
@@ -92,15 +92,29 @@
   <ItemGroup>
     <ClCompile Include="BlasterObserver.cpp" />
     <ClCompile Include="DepthHandsFromSkyGenerator2.cpp" />
+    <ClCompile Include="DualHandContainer.cpp" />
     <ClCompile Include="FilteringProcessor.cpp" />
     <ClCompile Include="FontaineProto.cpp" />
+    <ClCompile Include="SynchroDualDownObserver.cpp" />
+    <ClCompile Include="SynchroDualLeftObserver.cpp" />
+    <ClCompile Include="SynchroDualRightObserver.cpp" />
+    <ClCompile Include="SynchroDualUpObserver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BlasterObserver.h" />
     <ClInclude Include="DepthHandsFromSkyGenerator2.h" />
+    <ClInclude Include="DualHandContainer.h" />
     <ClInclude Include="filtering.h" />
     <ClInclude Include="FilteringProcessor.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="SynchroDualDownObserver.h" />
+    <ClInclude Include="SynchroDualLeftObserver.h" />
+    <ClInclude Include="SynchroDualRightObserver.h" />
+    <ClInclude Include="SynchroDualUpObserver.h" />
     <ClInclude Include="vecteur3d.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="FontaineProto.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

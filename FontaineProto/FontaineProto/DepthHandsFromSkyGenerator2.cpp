@@ -266,7 +266,7 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 
 		currentHands.push_back(Point3D(cameraPoint.X,cameraPoint.Y,cameraPoint.Z));
 	}
-
+	
 	// supprimer les mains trop proches (< HANDS_PROXIMITY)
 	vector<int> toDel;
 	int index = 0;
@@ -282,10 +282,6 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 
 	for(vector<int>::reverse_iterator rit = toDel.rbegin();rit != toDel.rend();rit++)
 		currentHands.erase(currentHands.begin()+ *rit);
-
-
-	//cout << "Nb hands = " << currentHands.size() << endl;
-
 
 	// associer les mains a un id et d'une frame a l autre les reassocier avec cet id ( par distance ?)
 	if(_hands.empty()){

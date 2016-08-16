@@ -90,7 +90,6 @@ bool BlasterObserver::observe(map<string,Group3D*> g3D,map<string,Group2D*>,map<
 				Point3D pos = rh->getLast()->getPosition();
 
 				//cout << "Hands " << git->first << " at " << pos.getX() << ";" << pos.getY() << ";" << pos.getZ() << endl;
-
 				bool wasAbove = (_jets[git->first] != -1);
 				bool needUpdate = true;
 

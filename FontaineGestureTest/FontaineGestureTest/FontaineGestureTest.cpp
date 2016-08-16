@@ -9,6 +9,7 @@
 #include "SpeedObserver.h"
 #include "SynchroObserver.h"
 #include "OneDollarRecognizerObserver.h"
+#include "DualHandProcessor.h"
 
 bool sortie = false;
 
@@ -30,27 +31,29 @@ int main(int argc, char* argv[])
 	myEnv->enableDataCopy(false);
 
 	MicrosoftKinectV2Generator* gt = new MicrosoftKinectV2Generator("xtionGen"); 
-
 	if(myEnv->registerNode(gt))
 		printf("Register Kinect on Kinect OK.\n");
 	else
 		printf("%s.\n",myEnv->getLastError().c_str());
+
+	/*DualHandProcessor* dualHand = new DualHandProcessor("DualHandProcessor");
+	dualHand->onlyObservePointType(LG_ORIENTEDPOINT3D_RIGHT_HAND);
+	if(myEnv->registerNode(dualHand))
+		printf("Register DualHandProcessor OK.\n");
+	else
+		printf("%s.\n",myEnv->getLastError().c_str());*/
 	
-	// TODO ajouter observer de vitesse
+	//// TODO ajouter observer de vitesse
 	SpeedObserver* speedo = new SpeedObserver("SpeedRightObserver");
 	speedo->setSpeedThreshold(1.0);
 	speedo->onlyObservePointType(LG_ORIENTEDPOINT3D_RIGHT_HAND);
-	/*if(myEnv->registerNode(speedo))
+	if(myEnv->registerNode(speedo))
 		printf("Register Left Plane Breaker Observer OK.\n");
 	else
-		printf("%s.\n",myEnv->getLastError().c_str());*/
-
-	SpeedObserver* lspeedo = new SpeedObserver("SpeedLeftObserver");
-	lspeedo->setSpeedThreshold(1.0);
-	lspeedo->onlyObservePointType(LG_ORIENTEDPOINT3D_LEFT_HAND);
+		printf("%s.\n",myEnv->getLastError().c_str());
 
 
-	// TODO ajouter Observer de multiple
+	//// TODO ajouter Observer de multiple
 	SynchroObserver* sync = new SynchroObserver("SynchroObserver");
 	//sync->addObserver(speedo,1);
 	//sync->addObserver(lspeedo,1);
@@ -58,8 +61,6 @@ int main(int argc, char* argv[])
 		printf("Register Synchro Observer OK.\n");
 	else
 		printf("%s.\n",myEnv->getLastError().c_str());
-
-
 
 	OneDollarRecognizerObserver* odr = new OneDollarRecognizerObserver("OneDollar");
 	if(myEnv->registerNode(odr))
@@ -81,10 +82,10 @@ int main(int argc, char* argv[])
 		if(!myEnv->update())
 			printf("%s.\n",myEnv->getLastError().c_str());
 
-		//cout << myEnv->getTime() << endl;
+		cout << myEnv->getTime() << endl;
 
-		//if(myEnv->getGroups3D().size() > 0)
-			//cout << "Someone is here" << endl;
+		if(myEnv->getGroups3D().size() > 0)
+			cout << "Someone is here" << endl;
 
 		int n = myEnv->getGroups3D().size();
 		if((nbUser ==0)&&(n>0))
@@ -106,8 +107,8 @@ int main(int argc, char* argv[])
 		if(highest>0.75 )
 			cout << "Circle hand " << myEnv->getTime() << endl;
 
-		//map<string,float> probas = sync->getProbabilities();
-		//if(probas["0"]>0.5) cout << "Gesture synchro !" << endl;
+		map<string,float> proba = sync->getProbabilities();
+		if(proba["0"]>0.5) cout << "Gesture synchro !" << endl;
 		
 	}
 

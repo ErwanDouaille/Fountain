@@ -62,9 +62,6 @@ bool FilteringProcessor::update(map<string,Group3D*>& g3D, map<string,Group2D*>&
 						current.setX(v.x);
 						current.setY(v.y);
 						current.setZ(v.z);
-
-						
-
 						updateData(_environment,g3D,mit->first+"Filtered",_generatedGroupType,eit->first,eit->second->getType(),_timestamp,
 							OrientedPoint3D(current,Orientation3D(),1.0,0));
 
@@ -89,7 +86,7 @@ bool FilteringProcessor::update(map<string,Group3D*>& g3D, map<string,Group2D*>&
 	for(vector<string>::iterator mit = toDel.begin();mit != toDel.end();mit++)
 		g3D.erase(*mit);
 
-	
+
 
 
 	return true;

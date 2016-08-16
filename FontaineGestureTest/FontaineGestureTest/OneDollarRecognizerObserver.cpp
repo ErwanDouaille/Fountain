@@ -80,8 +80,7 @@ bool OneDollarRecognizerObserver::observe(map<string, Group3D *> groups3D, map<s
     {
 		if(_numPointsInGestures.find(mit->first) == _numPointsInGestures.end())
 			_numPointsInGestures[mit->first] = MAX_LENGTH_OF_PATH;
-
-
+		
 		set<HOrientedPoint3D*> hops = mit->second->getElementsByType(LG_ORIENTEDPOINT3D_RIGHT_HAND);
 		if(hops.size() < 1) continue;
         HOrientedPoint3D* hop = *hops.begin();
@@ -89,94 +88,38 @@ bool OneDollarRecognizerObserver::observe(map<string, Group3D *> groups3D, map<s
 		if(!op) continue;
 		Point3D p3d = op->getPosition();
 
-		/*if(_timestamp != hop->getLastTimestamp()) continue;
-		float speed = 0.0;
-		//  compute speed
-		if(hop->getHistoric().size() > 2){
-			map<int,OrientedPoint3D>::const_reverse_iterator prev = hop->getHistoric().crbegin();
-			prev++;
-			speed = p3d.distanceTo(prev->second.getPosition()) / (hop->getLastTimestamp() - prev->first);
-			
-			//if(speed >3) 
-			//if(speed < 0.2)
-			//cout << "Speed : " << speed << endl;
+		cout << p3d.getX() << endl;
 
-
-			//int npig = MIN_LENGTH_OF_PATH + ((1.0 - (speed - 0.2)/2.8)) * (MAX_LENGTH_OF_PATH - MIN_LENGTH_OF_PATH);
-			int npig = ((-2240.0/47.0)*speed)+(-6800.0/47.0);
-			int npigp = _numPointsInGestures[mit->first];
-			_numPointsInGestures[mit->first] = (npigp * 10 + npig)/11;
-			//cout << "NumInGest : " << _numPointsInGestures[mit->first] << endl;
-			if(_numPointsInGestures[mit->first] < MIN_LENGTH_OF_PATH) _numPointsInGestures[mit->first] = MIN_LENGTH_OF_PATH;
-			if(_numPointsInGestures[mit->first] > MAX_LENGTH_OF_PATH) _numPointsInGestures[mit->first] = MAX_LENGTH_OF_PATH;
-
-		}*/
-
-
-
-
-		// TODO compute distance aux points du path
 		bool found = false;
 		int i = 0;
 		while((!found)&&(i<((int)_paths[mit->first].size() - MIN_NB_BEFORE_RECOG))){
 			//cout << i << " ; " << _paths[mit->first].size() << " ; " << MIN_NB_BEFORE_RECOG << " ; " <<(i<((int)_paths[mit->first].size() - MIN_NB_BEFORE_RECOG)) << endl;
-
 			found = (Point2D(p3d.getX(),p3d.getY()).distanceTo(*(_paths[mit->first].begin() + i)) < DISTANCE_FOR_RECOGNIZE);
 			i++;
 		}
 
-
-
-
-
 		if(found) //_numPointsInGestures[mit->first] = _paths[mit->first].size() - i;
-		{
 			for(int c = 0; c<i;c++) _paths[mit->first].erase(_paths[mit->first].begin());
-		}
-
-
-
-
 
 		//  ajout du point seulement quand il est loin du precedent DISTANCE_FOR_ADD
 		if(_paths[mit->first].size() ==0)
 			_paths[mit->first].push_back(Point2D(p3d.getX(),p3d.getY()));
 		else
 		{
-			if(Point2D(p3d.getX(),p3d.getY()).distanceTo(*(_paths[mit->first].begin() + _paths[mit->first].size() -1)) > DISTANCE_FOR_ADD){
+			if(Point2D(p3d.getX(),p3d.getY()).distanceTo(*(_paths[mit->first].begin() + _paths[mit->first].size() -1)) > DISTANCE_FOR_ADD)
 				_paths[mit->first].push_back(Point2D(p3d.getX(),p3d.getY()));
-				//cout << "adding" << endl;
-			}
 		}
 		if(_paths[mit->first].size() > MAX_LENGTH_OF_PATH) _paths[mit->first].erase(_paths[mit->first].begin());
-
-
-
-
-		/*int l = _numPointsInGestures[mit->first];
-		if(_paths[mit->first].size() < _numPointsInGestures[mit->first]) l = _paths[mit->first].size();
-		Path2D temp;
-		temp.insert(temp.begin(),_paths[mit->first].begin()+(_paths[mit->first].size() - l),_paths[mit->first].end());*/
-
 
 		//cout << "Recognize" << endl;
 		//if(temp.size() >= MIN_LENGTH_OF_PATH){
 		if(_paths[mit->first].size() >= MIN_LENGTH_OF_PATH){
-			//cout << "Recognize" << endl;
-			//RecognitionResult rr = recognize(temp);
 			RecognitionResult rr = recognize(_paths[mit->first]);
-
-			//cout << rr.name << " , " << rr.score << endl;
 			updateProbability(mit->first,rr.score);
 			//if(rr.score >0.8) cout << "Speed : " << speed << endl;
 			//cout << rr.name << " , " << rr.score << " ; " << l << endl;
 		}
-
-		// TODO sauvegarder le geste réalisé rr.name
-		// TODO enregistré l'amplitude / ou la recompiler a partir des paths
-
-    }
-
+	}
     return true;
 }
 

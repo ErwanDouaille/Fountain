@@ -13,7 +13,7 @@
 
 #define APPROX_PREC 40
 
-#define HANDS_PROXIMITY 100
+#define HANDS_PROXIMITY 0
 
 #include "Kinect.h"
 

@@ -1,6 +1,5 @@
 #include "SpeedObserver.h"
 
-
 SpeedObserver::SpeedObserver(string name) : Observer(name)
 {
 	_threshold = 2.0f;
@@ -8,11 +7,9 @@ SpeedObserver::SpeedObserver(string name) : Observer(name)
 
 }
 
-
 SpeedObserver::~SpeedObserver(void)
 {
 }
-
 
 Node* SpeedObserver::clone(string) const
 {

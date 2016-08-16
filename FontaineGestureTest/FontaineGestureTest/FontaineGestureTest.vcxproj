@@ -87,6 +87,7 @@
     <ClInclude Include="CycleObserver.h" />
     <ClInclude Include="Delayer.h" />
     <ClInclude Include="DirectionObserver.h" />
+    <ClInclude Include="DualHandProcessor.h" />
     <ClInclude Include="MicrosoftKinectV2Generator.h" />
     <ClInclude Include="OneDollarRecognizerObserver.h" />
     <ClInclude Include="OrObserver.h" />
@@ -102,6 +103,7 @@
     <ClCompile Include="CycleObserver.cpp" />
     <ClCompile Include="Delayer.cpp" />
     <ClCompile Include="DirectionObserver.cpp" />
+    <ClCompile Include="DualHandProcessor.cpp" />
     <ClCompile Include="FontaineGestureTest.cpp" />
     <ClCompile Include="MicrosoftKinectV2Generator.cpp" />
     <ClCompile Include="OneDollarRecognizerObserver.cpp" />
