@@ -1,0 +1,10 @@
+// IP ADDRESS
+127.0.0.1
+// PORT, int value
+9998
+// FOUNTAIN HEIGHT CUTOFF, int value
+250
+// DEBUG WINDOW, 0 or 1
+1
+// BODY SIZE, int value
+80

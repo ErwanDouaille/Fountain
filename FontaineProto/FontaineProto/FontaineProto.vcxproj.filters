@@ -27,22 +27,13 @@
     <ClCompile Include="DepthHandsFromSkyGenerator2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FilteringProcessor.cpp">
+    <ClCompile Include="OneEuroFilter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SynchroDualUpObserver.cpp">
+    <ClCompile Include="OneEuroFilterProcessor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DualHandContainer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SynchroDualDownObserver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SynchroDualLeftObserver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SynchroDualRightObserver.cpp">
+    <ClCompile Include="OpenCVDrawObserver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -53,31 +44,16 @@
     <ClInclude Include="DepthHandsFromSkyGenerator2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="filtering.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FilteringProcessor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="vecteur3d.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SynchroDualUpObserver.h">
+    <ClInclude Include="OneEuroFilterProcessor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DualHandContainer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SynchroDualDownObserver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SynchroDualLeftObserver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SynchroDualRightObserver.h">
+    <ClInclude Include="OpenCVDrawObserver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

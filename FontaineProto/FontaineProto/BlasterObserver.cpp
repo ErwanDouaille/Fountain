@@ -19,10 +19,6 @@ bool BlasterObserver::start()
 {
 	cout << "Start Observer" << endl;
 
-
-
-
-
 	string line;
 	ifstream myfile ("source3D.txt");
 	if (myfile.is_open())
@@ -74,76 +70,55 @@ bool BlasterObserver::stop()
 bool BlasterObserver::observe(map<string,Group3D*> g3D,map<string,Group2D*>,map<string,Group1D*>, map<string,GroupSwitch*>)
 {
 	//cout << "Update Observer" << endl;
-
 	// delete all proba
 	map<string,float> probas = getProbabilities();
 	for(map<string,float>::iterator pit = probas.begin();pit != probas.end();pit++)
 		updateProbability(pit->first,0.0f);
 
-	for(map<string,Group3D*>::iterator git = g3D.begin();git != g3D.end(); git++){
-		if(isObservedGroup(git->first,git->second->getType())){
+	for(map<string,Group3D*>::iterator git = g3D.begin();git != g3D.end(); git++)
+	{
+		if(isObservedGroup(git->first,git->second->getType()))
+		{
 			Group3D* g = git->second;
 			set<HOrientedPoint3D*> rhs = g->getElementsByType(LG_ORIENTEDPOINT3D_RIGHT_HAND);
 			float proba = 0.0;
-			for(set<HOrientedPoint3D*> ::iterator sit = rhs.begin();sit != rhs.end();sit++){
+			for(set<HOrientedPoint3D*> ::iterator sit = rhs.begin();sit != rhs.end();sit++)
+			{
 				HOrientedPoint3D* rh = *sit;
-				Point3D pos = rh->getLast()->getPosition();
+				if(rh->getHistoric().size() < 7 )
+					continue;
 
-				//cout << "Hands " << git->first << " at " << pos.getX() << ";" << pos.getY() << ";" << pos.getZ() << endl;
+				Point3D pos = rh->getLast()->getPosition();
 				bool wasAbove = (_jets[git->first] != -1);
 				bool needUpdate = true;
 
-				/*if(wasAbove){
-					Point2D p2 = Point2D(pos.getX(),pos.getY());
-					float d = p2.distanceTo(Point2D(xBlaster[_jets[git->first]],yBlaster[_jets[git->first]]));
-					if(d <= (blasterWidth+BLASTERS_THRESHOLDS_DISTANCE)/2.0){
-						needUpdate = false;
-						proba = 1.0;
-						_hauteurs[git->first] = hauteurCamera - pos.getZ() - 1000;
-					}
-				}*/
-
-				if(needUpdate){
-
+				if(needUpdate)
+				{
 					vector<float>::iterator yit = yBlaster.begin();
 					int cpt = 1;
 					float dist = 1000000000.0;
 					float h = -1.0;
 					int jet = -1;
-					for(vector<float>::iterator xit = xBlaster.begin();xit != xBlaster.end();xit++,yit++,cpt++){
-				
+					for(vector<float>::iterator xit = xBlaster.begin();xit != xBlaster.end();xit++,yit++,cpt++)
+					{
 						Point2D p2 = Point2D(pos.getX(),pos.getY());
 						float d = p2.distanceTo(Point2D(*xit,*yit));
-						if(d <= (blasterWidth-BLASTERS_THRESHOLDS_DISTANCE)/2.0){
-							if(d < dist){
+						if(d <= (blasterWidth)/2.0)
+						{
+							if(d < dist)
+							{
 								dist = d;
-								h = hauteurCamera - pos.getZ() - 800;
+								h = hauteurCamera - pos.getZ(); // - fountainHeight; ?? pourquoi fountainHeight ? h = hauteurCamera - pos.getZ() - fountainHeight;
 								jet = cpt;
 							}
 						}
-
-						//if((pos.getX() >= *xit-blasterWidth)
-						//	&&(pos.getX() <= *xit+blasterWidth)
-						//	&&(pos.getY() >= *yit-blasterWidth)
-						//	&&(pos.getY() <= *yit+blasterWidth)
-						//	){
-						//		proba = 1.0;
-						//		// save hauteur
-						//		//cout << "Hauteur cam = " << hauteurCamera << " hauteur Main = " <<pos.getZ() << endl;
-						//		_hauteurs[git->first] = hauteurCamera - pos.getZ() - 1000; // Dernier chiffre est la hauteur de la table
-						//		_jets[git->first] = cpt;
-						//}
-				
 					}
 
-
-					if(dist <= (blasterWidth-BLASTERS_THRESHOLDS_DISTANCE)/2.0){
+					if(dist <= blasterWidth/2.0){
 						proba = 1.0;
 					}
 					_hauteurs[git->first] = h;
 					_jets[git->first] = jet;
-
-
 				}
 			}
 
@@ -152,7 +127,6 @@ bool BlasterObserver::observe(map<string,Group3D*> g3D,map<string,Group2D*>,map<
 		else
 			updateProbability(git->first,0.0f);
 	}
-
 	return true;
 }
 

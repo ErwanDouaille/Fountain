@@ -1,19 +1,14 @@
 #pragma once
 
+// distance minimum d'association de mains
 #define HAND_DISTANCE_FOR_ASSOCIATION2 150
-
 #define BIG_EROSION 50
 #define SMALL_EROSION 10
-
 #define HANDS_PIXELS_WIDTH 35
-
-#define BODY_SIZE 101
-
 #define MIN_NB_CONT 2
-
 #define APPROX_PREC 40
-
 #define HANDS_PROXIMITY 0
+#define MIN_BLOB_SIZE 3000
 
 #include "Kinect.h"
 
@@ -33,31 +28,37 @@ class DepthHandsFromSkyGenerator2:
 private:
 
 	int hauteurCamera;
-
+	int bodySize;
 	int fountainHeight;
-	Mat frame;
-	Mat centers;
-
-
 	int height;
 	int width;
-
-
+	int _newId;
+	
 	unsigned int bufferSize;
+	
 	unsigned short* buffer;
+
+	float blasterWidth;
+	
+	vector<Point3D> currentHands;
+	vector<vector<Point> > contours;
+	vector<RotatedRect> ellipses;
+
+	vector<float> xBlaster;
+	vector<float> yBlaster;
+
+	map<int,Point3D> _hands;
+	
+	Mat frame;
+	Mat centers;
 
 	IKinectSensor* m_pKinectSensor;
 	IDepthFrameReader* pDepthReader;
 	IDepthFrameSource* pDepthFrameSource; 
 	ICoordinateMapper* pCoordinateMapper;
 
-
-	map<int,Point3D> _hands;
-	int _newId;
-
-	vector<Point3D> currentHands;
-
-	//Mat hellipse;
+	bool setupVariables();
+	bool initKinect();
 
 public:
 	DepthHandsFromSkyGenerator2(string name);
@@ -70,7 +71,7 @@ public:
 	*/
 	Node* clone(string cloneName) const;
 
-		/*!
+	/*!
 	* \brief Start the KinectGenerator by initializing streams
 	* Initialize RGB, IR or Depth stream depending on the output mode.
 	* \return true if success
@@ -100,6 +101,19 @@ public:
 	*/
 	set<string> produce() const; 
 
+	void setFountainHeight(int value) {fountainHeight = value;}
+	void setBodySize(int value) {bodySize = value;}
+	
+	int getWidth() {return width;}
+	int getHeight() {return height;}
+	int getBodySize() {return bodySize;}
 
+	vector<vector<Point> > getContours() {return contours;}
+	vector<RotatedRect> getEllipses() {return ellipses;}
+	map<int,Point3D> getHands() { return _hands;}
+
+	Mat getFrame() { return frame;}
+
+	ICoordinateMapper* getCoordinateMapper() {return pCoordinateMapper;}
 };
 

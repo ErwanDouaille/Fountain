@@ -1,43 +1,39 @@
-#include "FilteringProcessor.h"
+#include "OneEuroFilterProcessor.h"
 
-FilteringProcessor::FilteringProcessor(string name) : Processor(name)
+OneEuroFilterProcessor::OneEuroFilterProcessor(string name) : Processor(name)
 {
 	_generatedGroupType = "Filtered";
-
-	_filter = LowPassFilter<Vecteur3D>();
-	_cutOff = 2.0;
-
 }
 
-
-FilteringProcessor::~FilteringProcessor(void)
+OneEuroFilterProcessor::~OneEuroFilterProcessor(void)
 {
+	for(map<string,OneEuroFilterWrapper*>::iterator it = _filter.begin(); it!= _filter.end(); it++)
+		delete it->second;
 }
 
-Node* FilteringProcessor::clone(string newName) const
+Node* OneEuroFilterProcessor::clone(string newName) const
 {
-	return new FilteringProcessor(newName);
+	return new OneEuroFilterProcessor(newName);
 }
 
-bool FilteringProcessor::start()
+bool OneEuroFilterProcessor::start()
 {
-	//_filter.SetCutoffFrequency(0.25);
-	//_filter.SetCutoffFrequency(0.6);
-	_filter.SetCutoffFrequency(_cutOff);
-	_filter.SetUpdateFrequency(60.0);
+	this->setFreq(100.0);
+	this->setMincutoff(1.0);
+	this->setBeta(0.0);
+	this->setDcutoff(1.0);
 
-	//cout << "Start Processor" << endl;
 	return true;
 }
 
-bool FilteringProcessor::stop()
+bool OneEuroFilterProcessor::stop()
 {
-	//cout << "Stop Processor" << endl;
 	return true;
 }
 
-bool FilteringProcessor::update(map<string,Group3D*>& g3D, map<string,Group2D*>& g2D, map<string,Group1D*>& g1D, map<string,GroupSwitch*>& groupsSwitch)
+bool OneEuroFilterProcessor::update(map<string,Group3D*>& g3D, map<string,Group2D*>& g2D, map<string,Group1D*>& g1D, map<string,GroupSwitch*>& groupsSwitch)
 {
+	
 	vector<string> updated;
 	for(map<string,Group3D*>::iterator mit = g3D.begin();mit != g3D.end();mit++){
 		if(isProcessedGroup(mit->first,mit->second->getType())){
@@ -53,18 +49,23 @@ bool FilteringProcessor::update(map<string,Group3D*>& g3D, map<string,Group2D*>&
 									prevPos = (p->getHistoric().rbegin()++)->second.getPosition();
 						// Filtering
 						Point3D current;
-						//current =Point3D(((2*tp->getPosition().getX())+prevPos.getX())/3.0,((2*tp->getPosition().getY())+prevPos.getY())/3.0,((2*tp->getPosition().getZ())+prevPos.getZ())/3.0); 
-
 						current = tp->getPosition();
+						OneEuroFilterWrapper* filter;
+						if(_filter.count(mit->first + eit->first))
+							filter = _filter.at(mit->first + eit->first);
+						else
+						{
+							filter = new OneEuroFilterWrapper(this->freq(), this->mincutoff(), this->beta(), this->dcutoff());
+							this->_filter[mit->first + eit->first] = filter;
+						}
 
-						Vecteur3D v = Vecteur3D(current.getX(),current.getY(),current.getZ());
-						v = _filter.FilterValue(v);
-						current.setX(v.x);
-						current.setY(v.y);
-						current.setZ(v.z);
+						vector<double> filteredVector = filter->filter(current.getX(), current.getY(), current.getZ(), _timestamp);
+						current.setX(filteredVector.at(0));
+						current.setY(filteredVector.at(1));
+						current.setZ(filteredVector.at(2)); 
+						
 						updateData(_environment,g3D,mit->first+"Filtered",_generatedGroupType,eit->first,eit->second->getType(),_timestamp,
 							OrientedPoint3D(current,Orientation3D(),1.0,0));
-
 					}
 				}
 			}
@@ -75,8 +76,7 @@ bool FilteringProcessor::update(map<string,Group3D*>& g3D, map<string,Group2D*>&
 				updated.push_back(mit->first);
 		}
 	}
-
-	// delete filtered elements that have been deleted
+	// check if all element in g2D are in g3D, or delete them
 	vector<string> toDel;
 	for(vector<string>::iterator mit = updated.begin();mit != updated.end();mit++){
 		//cout << "Test substr " << mit->first << " - " << mit->first.substr(0,mit->first.length()-6) << endl;
@@ -85,31 +85,23 @@ bool FilteringProcessor::update(map<string,Group3D*>& g3D, map<string,Group2D*>&
 	}
 	for(vector<string>::iterator mit = toDel.begin();mit != toDel.end();mit++)
 		g3D.erase(*mit);
-
-
-
-
 	return true;
 }
 
-
-
-set<string> FilteringProcessor::need() const
+set<string> OneEuroFilterProcessor::need() const
 {
 	return 	_observedPointType;
 }
 
-set<string> FilteringProcessor::consume() const
+set<string> OneEuroFilterProcessor::consume() const
 {
 	set<string> consumed;
 	return consumed;
 }
 
-set<string> FilteringProcessor::produce() const
+set<string> OneEuroFilterProcessor::produce() const
 {
 	set<string> produce;
 	produce.insert(_generatedGroupType);
 	return produce;
 }
-
-

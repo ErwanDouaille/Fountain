@@ -18,51 +18,104 @@
 #include "LgEnvironment.h"
 
 #include "DepthHandsFromSkyGenerator2.h"
-#include "FilteringProcessor.h"
+#include "OneEuroFilterProcessor.h"
 #include "BlasterObserver.h"
-#include "SynchroDualUpObserver.h"
-#include "SynchroDualDownObserver.h"
+#include "OpenCVDrawObserver.h"
 
 using namespace std;
 using namespace lg;
 
-
-bool sortie = false;
+bool sortie = false, debugWindow = false;
+int fountainHeight, bodySize;
+lo_address client;
+string ipAdress, port;
 
 void killHandler (int param)
 {
 	sortie = true;
 }
 
+bool blasterControl( BlasterObserver* bobs)
+{
+	bool hasDoneGesture = false;
+	map<string,float> probas = bobs->getProbabilities();
+	for(map<string,float>::iterator pit = probas.begin();pit != probas.end();pit++){
+		if(pit->second > 0.8f){
+			hasDoneGesture = true;
+			if(debugWindow) 
+				cout << "aimant " << bobs->getJet(pit->first) << " " << bobs->getHauteur(pit->first) << endl;
+			if (lo_send(client, "/aimant", "if" ,bobs->getJet(pit->first) , bobs->getHauteur(pit->first)) == -1) // controlled blaster and hauteur
+				printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
+		}
+	}
+	return hasDoneGesture;
+}
+
+bool setup()
+{
+	string line;
+	ifstream myfile ("init_proto.txt");
+	if (myfile.is_open())
+	{
+		getline (myfile,line);
+		getline (myfile,line);
+		ipAdress = line;
+
+		getline (myfile,line);
+		getline (myfile,line);
+		port = line;
+
+		getline (myfile,line);
+		getline (myfile,line);
+		fountainHeight = atoi(line.c_str());
+
+		getline (myfile,line);
+		getline (myfile,line);
+		debugWindow = atoi(line.c_str());
+
+		getline (myfile,line);
+		getline (myfile,line);
+		bodySize = atoi(line.c_str());
+
+		myfile.close();
+	}
+	else 
+		return false;
+	return true;
+}
 
 int main(int argc, char* argv[])
 {
+	/************************************************************** INITIALISATION
+	******************************************************************************/
 	signal (SIGBREAK, killHandler);
 
+	if (setup())
+		printf("Init ... OK\n");
+	else
+	{
+		printf("Init ... error.\n");
+		return 2;
+	}
 
 	Environment* myEnv = new Environment();
-
-	//cout << myEnv->dataCopyEnabled();
-	// Disable data copy --> TODO retirer cet option
 	myEnv->enableDataCopy(false);
+	myEnv->setHistoricLength(10);
 
-
-	//TODO debug aimant
-
-	// TODO add generator and observers
-
+	/******************************************************************* GENERATOR
+	******************************************************************************/
 	DepthHandsFromSkyGenerator2* gt = new DepthHandsFromSkyGenerator2("DepthHandsFromSkyGenerator"); 
+	gt->setBodySize(bodySize);
+	gt->setFountainHeight(fountainHeight);
 	if(myEnv->registerNode(gt))
 		printf("Register DepthHandsFromSkyGenerator OK.\n");
 	else
 		printf("%s.\n",myEnv->getLastError().c_str());
 
-
-
-	//  a filtering processor
-	FilteringProcessor* fp = new FilteringProcessor("Filtering Processor");
+	/******************************************************************* PROCESSOR
+	******************************************************************************/
+	OneEuroFilterProcessor* fp = new OneEuroFilterProcessor("One Euro Filter Processor");
 	fp->onlyProcessGroupType("Kinectv2_Up_RightHands");
-	fp->setCutOffFrequency(2.0);
 	if(myEnv->registerNode(fp))
 		printf("Register Filter OK.\n");
 	else{
@@ -70,82 +123,47 @@ int main(int argc, char* argv[])
 		return 2;
 	}
 
+	/******************************************************************** OBSERVER
+	******************************************************************************/
 	BlasterObserver* bobs = new BlasterObserver(); 
 	bobs->onlyObserveGroupType(fp->getGeneratedGroupType());
+	bobs->setFountainHeight(fountainHeight);
 	if(myEnv->registerNode(bobs))
 		printf("Register BlasterObserver OK.\n");
 	else
 		printf("%s.\n",myEnv->getLastError().c_str());
-	
-	SynchroDualUpObserver* syncUp = new SynchroDualUpObserver(); 
-	syncUp->onlyObserveGroupType(fp->getGeneratedGroupType());
-	if(myEnv->registerNode(syncUp))
-		printf("Register SynchroDualUpObserver OK.\n");
-	else
-		printf("%s.\n",myEnv->getLastError().c_str());
 
-	//SynchroDualDownObserver* syncDown= new SynchroDualDownObserver(); 
-	//syncDown->onlyObserveGroupType(fp->getGeneratedGroupType());
-	//if(myEnv->registerNode(syncDown))
-	//	printf("Register SynchroDualDownObserver OK.\n");
-	//else
-	//	printf("%s.\n",myEnv->getLastError().c_str());
+	if(debugWindow) 
+	{
+		OpenCVDrawObserver* drawer = new OpenCVDrawObserver(); 
+		drawer->setDepthHandsFromSkyGenerator(gt);
+		drawer->setBlasterObserver(bobs);
+		drawer->onlyObserveGroupType(fp->getGeneratedGroupType());
+		if(myEnv->registerNode(drawer))
+			printf("Register OpenCVDrawObserver OK.\n");
+		else
+			printf("%s.\n",myEnv->getLastError().c_str());
+	}
 
+	/*********************************************************************** START 
+	******************************************************************************/
 	if(myEnv->start())
-		printf("Register BlasterObserver OK.\n");
+		printf("Start environment OK.\n");
 	else
 		printf("%s.\n",myEnv->getLastError().c_str());
 
-	// create client
-	lo_address client;
-	//client = lo_address_new("134.206.11.110", "3333");
-	client = lo_address_new("192.168.1.1", "9998");
+	client = lo_address_new(ipAdress.c_str(), port.c_str());
 
-	while(!sortie){
-		myEnv->update();
-
-		//cout << "Nb groups = " << myEnv->getGroups3D().size() << endl;
-		//cout << "Nb proba groups = " << bobs->getProbabilities().size() << endl;
-
+	/***************************************************************** UPDATE LOOP
+	******************************************************************************/
+	while(!sortie){		
 		bool hasDoneGesture = false;
-
-
-
-		// If observer de main au dessus de blaster a vrai -> rien d autres
-		map<string,float> probas = bobs->getProbabilities();
-		for(map<string,float>::iterator pit = probas.begin();pit != probas.end();pit++){
-			if(pit->second > 0.8f){
-				hasDoneGesture = true;
-				//highest = pit->second;
-				//highestGroup = pit->first;
-
-				//cout << "/aimant " << bobs->getJet(pit->first) << " with " << bobs->getHauteur(pit->first) << endl;
-				//  send message with parameters
-				if (lo_send(client, "/aimant", "if" ,bobs->getJet(pit->first) , bobs->getHauteur(pit->first)) == -1) // controlled blaster and hauteur
-					printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
-			}
-		}
-
-		if(!hasDoneGesture){
-			
-			if(syncUp->getProbability(to_string(0)) == 1.0)
-				cout << "up " << syncUp->getSpeed() << endl;
-				//if (lo_send(client, "/cmdGlobe/leve ", "ff" ,syncUp->getSpeed(), syncUp->getAmplitude()) == -1)
-				//	printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
-			
-			//if(syncDown->getProbability(to_string(0)) == 1.0)
-				/*if (lo_send(client, "/cmdGlobe/baisse", "ff" ,syncDown->getSpeed(), syncDown->getAmplitude()) == -1)
-					printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));*/
-		}
-
+		myEnv->update();
+		hasDoneGesture = blasterControl(bobs);
 		Sleep(1);
 	}
 
 	myEnv->stop();
-
-
-	//system("pause");
-
 	return 0;
 }
 

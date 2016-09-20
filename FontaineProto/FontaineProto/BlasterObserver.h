@@ -11,6 +11,7 @@ class BlasterObserver :
 {
 private:
 	int hauteurCamera;
+	int fountainHeight;
 	float blasterWidth;
 	vector<float> xBlaster;
 	vector<float> yBlaster;
@@ -33,5 +34,7 @@ public:
 
 	float getHauteur(string);
 	int getJet(string);
+
+	void setFountainHeight(int value) { fountainHeight = value;}
 };
 

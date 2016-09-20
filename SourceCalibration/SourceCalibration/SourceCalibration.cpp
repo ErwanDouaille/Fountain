@@ -13,6 +13,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <math.h>       /* isinf */
 
 #include "Kinect.h"
 
@@ -23,7 +24,7 @@ using namespace cv;
 using namespace std;
 
 
-int hauteurCamera;
+int hauteurCamera, w, h;
 int fountainXPosition,fountainYPosition,fountainWidth,blasterWidth;
 vector<int> blasterXPosition,blasterYPosition;
 
@@ -39,60 +40,89 @@ void MouseCallBackFunc(int event, int x, int y, int flags, void* userdata)
 {
 	int fx = x/displaySize;
 	int fy = y/displaySize;
-     if  ( event == EVENT_LBUTTONDOWN )
-     {
-         // cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-		 // check if a square is attached, if yes attach it unless, check if the square is attached
+	if  ( event == EVENT_LBUTTONDOWN )
+	{
+		// cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+		// check if a square is attached, if yes attach it unless, check if the square is attached
 		for(int i = 0;i<blasterXPosition.size();i++){
-			  if((fx>=blasterXPosition[i]-blasterWidth/2.0)&&(fx<=blasterXPosition[i]+blasterWidth/2.0)&&(fy>=blasterYPosition[i]-blasterWidth/2.0)&&(fy<=blasterYPosition[i]+blasterWidth/2.0))
-				  attached = i;
-		 }
+			if((fx>=blasterXPosition[i]-blasterWidth/2.0)&&(fx<=blasterXPosition[i]+blasterWidth/2.0)&&(fy>=blasterYPosition[i]-blasterWidth/2.0)&&(fy<=blasterYPosition[i]+blasterWidth/2.0))
+				attached = i;
+		}
 		if(attached == -2){
 			if((fx>=fountainXPosition-fountainWidth/2.0)&&(fx<=fountainXPosition+fountainWidth/2.0)&&(fy>=fountainYPosition-fountainWidth/2.0)&&(fy<=fountainYPosition+fountainWidth/2.0))
-				  attached = -1;
+				attached = -1;
 		}
-		 dx=fx;
-		 dy=fy;
+		dx=fx;
+		dy=fy;
 
 
-     }
-	 if  ( event == EVENT_LBUTTONUP )
-     {
-          attached = -2;
-     }
-     /*else if  ( event == EVENT_RBUTTONDOWN )
-     {
-          cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-     }
-     else if  ( event == EVENT_MBUTTONDOWN )
-     {
-          cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-     }
-     else */
+	}
+	if  ( event == EVENT_LBUTTONUP )
+	{
+		attached = -2;
+	}
+	/*else if  ( event == EVENT_RBUTTONDOWN )
+	{
+	cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+	}
+	else if  ( event == EVENT_MBUTTONDOWN )
+	{
+	cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+	}
+	else */
 	if ( event == EVENT_MOUSEMOVE )
-     {
-          //cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
-		 if(attached!=-2){
-			 if(attached == -1){
-				 fountainXPosition += (fx-dx);
-				 fountainYPosition += (fy-dy);
-			 }
-			 else
-			 {
-				 blasterXPosition[attached] += (fx-dx);
-				 blasterYPosition[attached] += (fy-dy);
-			 }
-			 dx = fx;
-			 dy = fy;
-		 }
+	{
+		//cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
+		if(attached!=-2){
+			if(attached == -1){
+				fountainXPosition += (fx-dx);
+				fountainYPosition += (fy-dy);
+			}
+			else
+			{
+				blasterXPosition[attached] += (fx-dx);
+				blasterYPosition[attached] += (fy-dy);
+			}
+			dx = fx;
+			dy = fy;
+		}
 
-     }
+	}
+}
+
+void alignBuseFromLayout()
+{	
+	int cpt = 4;
+	for(int i = -1; i <= 1; i++)
+	{
+		for(int j = -2; j <= 2; j++)
+		{
+			blasterXPosition[cpt-1] = fountainXPosition + (j*blasterWidth);
+			blasterYPosition[cpt-1] = fountainYPosition + (i*blasterWidth);
+			cpt++;
+		}
+	}
+	cpt = 1;
+	for(int i = -1; i <= 1; i++)
+	{
+		blasterXPosition[cpt-1] = fountainXPosition + (i*blasterWidth);
+		blasterYPosition[cpt-1] = fountainYPosition + (-2*blasterWidth);
+		blasterXPosition[cpt+17] = fountainXPosition + (i*blasterWidth);
+		blasterYPosition[cpt+17] = fountainYPosition + (2*blasterWidth);
+		cpt++;
+	}
+}
+
+void resetFountainPosition()
+{	
+	fountainXPosition = 512/2;		
+	fountainYPosition = 424/2;
 }
 
 int main(int argc, char* argv[])
 {
 
-	
+
 	int similarity = 0;
 
 	string line;
@@ -110,7 +140,6 @@ int main(int argc, char* argv[])
 
 		getline (myfile,line);
 		blasterWidth = stoi(line);
-
 		getline (myfile,line);
 		int numberOfBlaster = stoi(line);
 
@@ -137,7 +166,7 @@ int main(int argc, char* argv[])
 	IColorFrameReader* pColorReader;
 	IColorFrameSource* pColorFrameSource = NULL;
 
-	
+
 	HRESULT hr;
 
 	hr = GetDefaultKinectSensor(&m_pKinectSensor);
@@ -162,15 +191,15 @@ int main(int argc, char* argv[])
 		cout << "ColorTrackerv2 Error : OpenReader failed." << endl;
 		return false;
 	}
-	
-	
+
+
 	IFrameDescription* pDepthDescription;
 	hr = pDepthFrameSource->get_FrameDescription( &pDepthDescription );
 	if( FAILED( hr ) ){
 		std::cerr << "Error : IDepthFrameSource::get_FrameDescription()" << std::endl;
 		return -1;
 	}
-	int w = 0,h = 0;
+	w = 0,h = 0;
 	pDepthDescription->get_Width( &w ); // 512
 	pDepthDescription->get_Height( &h ); // 424
 	//unsigned int irBufferSize = w * h * sizeof( unsigned short );
@@ -218,63 +247,63 @@ int main(int argc, char* argv[])
 	Mat display;
 	//Mat img;
 
-	  char k = 0;
-	  while(k!=27){
+	char k = 0;
+	while(k!=27){
 
-		  HRESULT hResult = S_OK;
+		HRESULT hResult = S_OK;
 
-		  if(displayColor){
-			  	IColorFrame* pColorFrame = nullptr;
-				hResult = pColorReader->AcquireLatestFrame( &pColorFrame );
-				while(!SUCCEEDED(hResult)){
-				    Sleep(50);
-					hResult = pColorReader->AcquireLatestFrame(&pColorFrame);
-				}
+		if(displayColor){
+			IColorFrame* pColorFrame = nullptr;
+			hResult = pColorReader->AcquireLatestFrame( &pColorFrame );
+			while(!SUCCEEDED(hResult)){
+				Sleep(50);
+				hResult = pColorReader->AcquireLatestFrame(&pColorFrame);
+			}
 
-				if( SUCCEEDED( hResult ) ){
-					hResult = pColorFrame->CopyConvertedFrameDataToArray( colorBufferSize, reinterpret_cast<BYTE*>( colorBufferMat.data ), ColorImageFormat::ColorImageFormat_Bgra );
-					if( !SUCCEEDED( hResult ) ){
-						return false;
-					}
-
-				   resize(colorBufferMat,display,Size(displaySize*w,displaySize*h));
-
-				   flip(display,display,1);
-
-				   cv::line(display,Point(displaySize*w/2,0),Point(displaySize*w/2,displaySize*h),Scalar(0,0,255),2);
-				   cv::line(display,Point(0,displaySize*h/2),Point(displaySize*w,displaySize*h/2),Scalar(0,0,255),2);
-
-				   
-					if (pColorFrame )
-					{
-						pColorFrame ->Release();
-						pColorFrame  = NULL;
-					}
-
-
-
-				}
-				else 
+			if( SUCCEEDED( hResult ) ){
+				hResult = pColorFrame->CopyConvertedFrameDataToArray( colorBufferSize, reinterpret_cast<BYTE*>( colorBufferMat.data ), ColorImageFormat::ColorImageFormat_Bgra );
+				if( !SUCCEEDED( hResult ) ){
 					return false;
+				}
+
+				resize(colorBufferMat,display,Size(displaySize*w,displaySize*h));
+
+				flip(display,display,1);
+
+				cv::line(display,Point(displaySize*w/2,0),Point(displaySize*w/2,displaySize*h),Scalar(0,0,255),2);
+				cv::line(display,Point(0,displaySize*h/2),Point(displaySize*w,displaySize*h/2),Scalar(0,0,255),2);
+
+
+				if (pColorFrame )
+				{
+					pColorFrame ->Release();
+					pColorFrame  = NULL;
+				}
 
 
 
-		  }
-		  else
-		  {
+			}
+			else 
+				return false;
 
-			  IDepthFrame* pDepthFrame = nullptr;
-			  hResult = pDepthReader->AcquireLatestFrame( &pDepthFrame );
-			  while(!SUCCEEDED(hResult)){
-				  Sleep(10);
-				  hResult = pDepthReader->AcquireLatestFrame( &pDepthFrame );
-			  }
+
+
+		}
+		else
+		{
+
+			IDepthFrame* pDepthFrame = nullptr;
+			hResult = pDepthReader->AcquireLatestFrame( &pDepthFrame );
+			while(!SUCCEEDED(hResult)){
+				Sleep(10);
+				hResult = pDepthReader->AcquireLatestFrame( &pDepthFrame );
+			}
 
 			if( SUCCEEDED( hResult ) ){
 				unsigned int bufferSize = 0;
 				unsigned short* buffer = nullptr;
 				hResult = pDepthFrame->AccessUnderlyingBuffer( &bufferSize, &buffer );
-	
+
 				if( SUCCEEDED( hResult ) ){
 					for( int y = 0; y < h; y++ ){
 						for( int x = 0; x < w; x++ ){
@@ -332,7 +361,7 @@ int main(int argc, char* argv[])
 						}
 					}
 
-					
+
 					if(k=='s'){
 
 						// get hauteur camera
@@ -347,7 +376,9 @@ int main(int argc, char* argv[])
 						// Compute hauteur camera, by average of four points
 						float h = 0;
 						int cptH = 0;
-						float d = buffer[(int)(fountainYPosition-fountainWidth/2.0)*w + (w-1-(int)(fountainXPosition-fountainWidth/2.0))];
+						float d;
+
+						d = buffer[(int)(fountainYPosition-fountainWidth/2.0)*w + (w-1-(int)(fountainXPosition-fountainWidth/2.0))];
 						if((d>500)&&(d<3500)){h+=d; cptH++;}
 						d = buffer[(int)(fountainYPosition-fountainWidth/2.0)*w + (w-1-(int)(fountainXPosition+fountainWidth/2.0))];
 						if((d>500)&&(d<3500)){h+=d; cptH++;}
@@ -356,7 +387,7 @@ int main(int argc, char* argv[])
 						d = buffer[(int)(fountainYPosition+fountainWidth/2.0)*w + (w-1-(int)(fountainXPosition+fountainWidth/2.0))];
 						if((d>500)&&(d<3500)){h+=d; cptH++;}
 						if(cptH>0){
-							hauteurCamera = h/cptH;
+							//hauteurCamera = h/cptH;
 							cout << "H = " << hauteurCamera << endl;
 						}
 
@@ -376,38 +407,42 @@ int main(int argc, char* argv[])
 						float corner2Y = static_cast<float>(cameraPoint.Y);*/
 
 						//float realBlasterWidth = 1000.0*(abs(corner2X-corner1X)+abs(corner2Y-corner1Y))/2.0;
-						float realBlasterWidth = 200.0;
 
 
-						 ofstream myfile;
-						  myfile.open ("source_config.txt");
-						  myfile << hauteurCamera << "\n";
-						  myfile << fountainXPosition << "\n";
-						  myfile << fountainYPosition << "\n";
-						  myfile << fountainWidth << "\n";
-						  myfile << blasterWidth << "\n";
-						  myfile << blasterXPosition.size() << "\n";
-							for(int i = 0;i<blasterXPosition.size();i++){
-								myfile << blasterXPosition[i] << "\n";
-								myfile << blasterYPosition[i] << "\n";
-							}
-						  myfile.close();
+						ofstream myfile;
+						myfile.open ("source_config.txt");
+						myfile << hauteurCamera << "\n";
+						myfile << fountainXPosition << "\n";
+						myfile << fountainYPosition << "\n";
+						myfile << fountainWidth << "\n";
+						myfile << blasterWidth << "\n";
+						myfile << blasterXPosition.size() << "\n";
+						for(int i = 0;i<blasterXPosition.size();i++){
+							myfile << blasterXPosition[i] << "\n";
+							myfile << blasterYPosition[i] << "\n";
+						}
+						myfile.close();
 
-						  //  save real positions to file
+						//  save real positions to file
 
-						  myfile.open ("source3D.txt");
-						  myfile << hauteurCamera << "\n";
-						  myfile << realBlasterWidth << "\n";
-						  myfile << blasterXPosition.size() << "\n";
-							for(int i = 0;i<blasterXPosition.size();i++){
-								depthPoint.X = static_cast<float>(blasterXPosition[i]); 
-								depthPoint.Y = static_cast<float>(blasterYPosition[i]); 
-								depth = buffer[blasterYPosition[i]*w + (w-1-blasterXPosition[i])];
-								pCoordinateMapper->MapDepthPointToCameraSpace(depthPoint,depth,&cameraPoint);
-								myfile << 1000.0*static_cast<float>(cameraPoint.X) << "\n";
-								myfile << 1000.0*static_cast<float>(cameraPoint.Y) << "\n";
-							}
-						  myfile.close();
+						myfile.open ("source3D.txt");
+						myfile << hauteurCamera << "\n";
+						myfile << blasterWidth << "\n";
+						myfile << blasterXPosition.size() << "\n";
+						for(int i = 0;i<blasterXPosition.size();i++){
+							depthPoint.X = static_cast<float>(blasterXPosition[i]); 
+							depthPoint.Y = static_cast<float>(blasterYPosition[i]); 
+							depth = hauteurCamera;
+							pCoordinateMapper->MapDepthPointToCameraSpace(depthPoint,depth,&cameraPoint);
+							cout << depthPoint.X << " - " << depthPoint.Y << endl;
+							cout << static_cast<float>(cameraPoint.X) << " - " << static_cast<float>(cameraPoint.Y) << endl;
+							pCoordinateMapper->MapCameraPointToDepthSpace(cameraPoint, &depthPoint);
+							cout << depthPoint.X << " - " << depthPoint.Y << endl;
+							cout << static_cast<float>(cameraPoint.X) << " - " << static_cast<float>(cameraPoint.Y) << endl;
+							myfile << 1000.0*static_cast<float>(cameraPoint.X) << "\n";
+							myfile << 1000.0*static_cast<float>(cameraPoint.Y) << "\n";
+						}
+						myfile.close();
 
 
 					}
@@ -417,7 +452,7 @@ int main(int argc, char* argv[])
 				else{
 					return false;
 				}
-				
+
 			}
 			else 
 				return false;
@@ -426,20 +461,42 @@ int main(int argc, char* argv[])
 				pDepthFrame->Release();
 				pDepthFrame = NULL;
 			}
-		  
 
-			  rectangle(frame,Rect(fountainXPosition-fountainWidth/2.0,fountainYPosition-fountainWidth/2.0,fountainWidth,fountainWidth),Scalar(0,similarity,255-similarity),3);
+			rectangle(frame,
+				Rect(fountainXPosition-fountainWidth/2.0, 
+				fountainYPosition-fountainWidth/2.0, 
+				fountainWidth	, 
+				fountainWidth),
+				Scalar(0,similarity,255-similarity),
+				3);
+			for(int i = -2; i <= 2; i++)
+			{
+				rectangle(frame,
+					Rect(fountainXPosition - (i*blasterWidth) - (blasterWidth/2.0), 
+					fountainYPosition-fountainWidth/2.0, 
+					blasterWidth, 
+					fountainWidth),
+					Scalar(0,255,0),
+					1);
+				rectangle(frame,
+					Rect(fountainXPosition-fountainWidth/2.0,
+					fountainYPosition - (i*blasterWidth) - (blasterWidth/2.0),
+					fountainWidth, 
+					blasterWidth),
+					Scalar(0,255,0),
+					1);
+			}
 
-			  char textbuffer [33];
-			  for(int i = 0;i<blasterXPosition.size();i++){
+			char textbuffer [33];
+			for(int i = 0;i<blasterXPosition.size();i++){
 				sprintf(textbuffer,"%i",i+1);
-				  putText(frame,textbuffer, Point2f(blasterXPosition[i]-blasterWidth/2.0,blasterYPosition[i]), FONT_HERSHEY_PLAIN, 1,  Scalar(0,0,255,255), 2);
-				  //rectangle(frame,Rect(blasterXPosition[i]-blasterWidth/2.0,blasterYPosition[i]-blasterWidth/2.0,blasterWidth,blasterWidth),Scalar(255,0,0));
-				  circle(frame,Point(blasterXPosition[i],blasterYPosition[i]),blasterWidth/2.0,Scalar(255,0,0));
-			  }
+				putText(frame,textbuffer, Point2f(blasterXPosition[i]-blasterWidth/2.0,blasterYPosition[i]), FONT_HERSHEY_PLAIN, 1,  Scalar(0,0,255,255), 2);
+				//rectangle(frame,Rect(blasterXPosition[i]-blasterWidth/2.0,blasterYPosition[i]-blasterWidth/2.0,blasterWidth,blasterWidth),Scalar(255,0,0));
+				circle(frame,Point(blasterXPosition[i],blasterYPosition[i]),blasterWidth/2.0,Scalar(255,0,0));
+			}
 			resize(frame,display,Size(displaySize*w,displaySize*h));
-		  }
-		
+		}
+
 		cv::imshow("source_config", display);
 
 
@@ -447,21 +504,20 @@ int main(int argc, char* argv[])
 
 		if(k == 32) // Space
 			displayColor = ! displayColor;
+		
+		if(k=='a')
+			alignBuseFromLayout();
+		if(k=='r')
+			resetFountainPosition();
+
+	}
 
 
-	  }
-
-
-	  	if (pDepthReader)
+	if (pDepthReader)
 	{
 		pDepthReader->Release();
 		pDepthReader = NULL;
 	}
-
-
-
-
-
 
 
 	if (pCoordinateMapper)
