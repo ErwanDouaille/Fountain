@@ -194,7 +194,7 @@ void MicrosoftKinectV2Generator::RegisterBody(INT64 nTime, int nBodyCount, IBody
 						angle = computeAngleBetweenJoints(pointJoint, 
 							getRepositionedPoint(joints[JointType_HandTipLeft].Position), 
 							getRepositionedPoint(joints[JointType_WristLeft].Position));
-						updateData(_environment, g3D, myID, _3DGroupType, "left_hand", LG_ORIENTEDPOINT3D_LEFT_HAND, _timestamp,
+						updateData(_environment, g3D, myID, _3DGroupType, "right_hand1", LG_ORIENTEDPOINT3D_RIGHT_HAND, _timestamp,
 							OrientedPoint3D(Point3D(pointJoint.getX()*1000.0f,pointJoint.getY()*1000.0f,pointJoint.getZ()*1000.0f), Orientation3D(angle, 0.0, 0.0), 1.0, 0.0));
 					}
 

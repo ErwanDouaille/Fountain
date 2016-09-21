@@ -93,6 +93,8 @@
     <ClCompile Include="BlasterObserver.cpp" />
     <ClCompile Include="DepthHandsFromSkyGenerator2.cpp" />
     <ClCompile Include="FontaineProto.cpp" />
+    <ClCompile Include="CmdGlobObserver.cpp" />
+    <ClCompile Include="OneDollarRecognizerObserver.cpp" />
     <ClCompile Include="OneEuroFilter.cpp" />
     <ClCompile Include="OneEuroFilterProcessor.cpp" />
     <ClCompile Include="OpenCVDrawObserver.cpp" />
@@ -100,6 +102,8 @@
   <ItemGroup>
     <ClInclude Include="BlasterObserver.h" />
     <ClInclude Include="DepthHandsFromSkyGenerator2.h" />
+    <ClInclude Include="CmdGlobObserver.h" />
+    <ClInclude Include="OneDollarRecognizerObserver.h" />
     <ClInclude Include="OneEuroFilterProcessor.h" />
     <ClInclude Include="OpenCVDrawObserver.h" />
     <ClInclude Include="resource.h" />

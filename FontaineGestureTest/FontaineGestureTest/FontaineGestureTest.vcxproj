@@ -103,7 +103,6 @@
     <ClCompile Include="CycleObserver.cpp" />
     <ClCompile Include="Delayer.cpp" />
     <ClCompile Include="DirectionObserver.cpp" />
-    <ClCompile Include="DualHandProcessor.cpp" />
     <ClCompile Include="FontaineGestureTest.cpp" />
     <ClCompile Include="MicrosoftKinectV2Generator.cpp" />
     <ClCompile Include="OneDollarRecognizerObserver.cpp" />

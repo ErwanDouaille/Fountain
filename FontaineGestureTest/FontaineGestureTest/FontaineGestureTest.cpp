@@ -9,7 +9,6 @@
 #include "SpeedObserver.h"
 #include "SynchroObserver.h"
 #include "OneDollarRecognizerObserver.h"
-#include "DualHandProcessor.h"
 
 bool sortie = false;
 
@@ -82,7 +81,7 @@ int main(int argc, char* argv[])
 		if(!myEnv->update())
 			printf("%s.\n",myEnv->getLastError().c_str());
 
-		cout << myEnv->getTime() << endl;
+		//cout << myEnv->getTime() << endl;
 
 		if(myEnv->getGroups3D().size() > 0)
 			cout << "Someone is here" << endl;

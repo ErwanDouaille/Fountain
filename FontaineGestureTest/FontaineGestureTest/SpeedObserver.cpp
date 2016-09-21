@@ -34,7 +34,7 @@ bool SpeedObserver::observe(map<string,Group3D*> g3D,map<string,Group2D*>,map<st
 	
 	for(map<string,Group3D*>::iterator mit = g3D.begin();mit != g3D.end();mit++){
 		//updateProbability(mit->first,0.0);
-		//cout << " 3D Groups " << mit->first.c_str() << endl;
+		cout << " 3D Groups " << mit->first.c_str() << endl;
 		if(isObservedGroup(mit->first,mit->second->getType())){
 			map<string,HOrientedPoint3D*> elements = mit->second->getAll();
 			for(map<string,HOrientedPoint3D*>::iterator eit = elements.begin();eit != elements.end();eit++){
