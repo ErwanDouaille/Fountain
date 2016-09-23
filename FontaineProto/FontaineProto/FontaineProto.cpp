@@ -28,7 +28,7 @@ using namespace std;
 using namespace lg;
 
 bool sortie = false, debugWindow = false;
-int fountainHeight, bodySize;
+int fountainHeight, bodySize, gestureDelay, savedDelay, aimantationDelayForGesture, savedDelayAimantation, pastUsers = -1;
 lo_address client;
 string ipAdress, port;
 
@@ -36,11 +36,24 @@ void killHandler (int param)
 {
 	sortie = true;
 }
+
+void sendNbUsers(DepthHandsFromSkyGenerator2* gt)
+{
+	int currentUsers =  gt->getEllipses().size();
+	if(currentUsers != pastUsers)
+	{
+		if (lo_send(client, "/qqun", "i", currentUsers) == -1) // controlled blaster and hauteur
+			printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
+		pastUsers = currentUsers;
+	}
+}
+
 bool globalCommand(CmdGlobObserver* cmd)
 {
 	if(cmd->getCmdName().compare("") == 0)
 		return false;
 	string name = "/cmdGlob/" + cmd->getCmdName();
+	cout << name << "\t" << cmd->getSpeed() << "\t" << cmd->getAmplitude() << endl;
 	if (lo_send(client, name.c_str(), "fffff", cmd->getSpeed(), cmd->getAmplitude(), cmd->getDirection().getX(), cmd->getDirection().getY(), cmd->getDirection().getZ()) == -1) // controlled blaster and hauteur
 		printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
 	return true;
@@ -62,7 +75,12 @@ bool gestureRecognition( OneDollarRecognizerObserver* odr)
 	if(highest>0.7 )
 	{
 		hasDoneGesture = true;
-		//cout << highestGroup << "\t" << highest << endl;
+		if(highestGroup.compare("Circle") == 0)
+			if (lo_send(client, "/cmdAnim/tourne", "i" , 1) == -1) // controlled blaster and hauteur
+				printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
+		if(highestGroup.compare("Circle_Inv") == 0)
+			if (lo_send(client, "/cmdAnim/tourne", "i" , -1) == -1) // controlled blaster and hauteur
+				printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
 	}
 	return hasDoneGesture;
 }
@@ -109,6 +127,14 @@ bool setup()
 		getline (myfile,line);
 		bodySize = atoi(line.c_str());
 
+		getline (myfile,line);
+		getline (myfile,line);
+		gestureDelay = atoi(line.c_str());
+
+		getline (myfile,line);
+		getline (myfile,line);
+		aimantationDelayForGesture = atoi(line.c_str());
+
 		myfile.close();
 	}
 	else 
@@ -133,6 +159,8 @@ int main(int argc, char* argv[])
 	Environment* myEnv = new Environment();
 	myEnv->enableDataCopy(false);
 	myEnv->setHistoricLength(10);
+	
+	savedDelay = myEnv->getTime();
 
 	/******************************************************************* GENERATOR
 	******************************************************************************/
@@ -171,7 +199,7 @@ int main(int argc, char* argv[])
 		printf("Register CmdGlobObserver OK.\n");
 	else
 		printf("%s.\n",myEnv->getLastError().c_str());
-
+	
 	OneDollarRecognizerObserver* odr = new OneDollarRecognizerObserver("OneDollarRecognizerObserver");
 	odr->onlyObserveGroupType(fp->getGeneratedGroupType());
 	if(myEnv->registerNode(odr))
@@ -203,11 +231,17 @@ int main(int argc, char* argv[])
 	/***************************************************************** UPDATE LOOP
 	******************************************************************************/
 	while(!sortie){		
-		bool hasDoneGesture = false;
+		bool hasDoneAimant = false, hasDoneGesture = false;
 		myEnv->update();
-		hasDoneGesture = blasterControl(bobs);
-		if(!hasDoneGesture) hasDoneGesture = globalCommand(globCmd);
-		if(!hasDoneGesture) hasDoneGesture = gestureRecognition(odr);
+		hasDoneAimant = blasterControl(bobs);
+		savedDelayAimantation = hasDoneAimant ? myEnv->getTime() : 0;
+		if(savedDelay + gestureDelay < myEnv->getTime() && !hasDoneAimant && savedDelayAimantation + aimantationDelayForGesture < myEnv->getTime())
+		{
+			if(!hasDoneGesture) hasDoneGesture = globalCommand(globCmd);
+			if(!hasDoneGesture) hasDoneGesture = gestureRecognition(odr);
+			savedDelay = hasDoneGesture ? myEnv->getTime() : 0;
+		}
+		sendNbUsers(gt);
 		Sleep(1);
 	}
 
