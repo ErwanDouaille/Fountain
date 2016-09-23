@@ -65,7 +65,7 @@ float angleBetweenHands(HOrientedPoint3D* h, HOrientedPoint3D* rh)
 
 	before = before < 0 ? before += 2 * 3.14 : before;
 	after = after < 0 ? after += 2 * 3.14 : after;
-	cout << "between " << before << "\t " << after << endl; 
+	//cout << "between " << before << "\t " << after << endl; 
 	return after - before;
 }
 
@@ -82,7 +82,7 @@ float angleMouvement(HOrientedPoint3D* h, HOrientedPoint3D* rh)
 
 	/*before = before < 0 ? before += 2 * 3.14 : before;
 	after = after < 0 ? after += 2 * 3.14 : after;*/
-	cout << "mouvement " << before << "\t " << after << endl; 
+	//cout << "mouvement " << before << "\t " << after << endl; 
 	return after - before;
 }
 
@@ -92,7 +92,7 @@ bool gotSimilarDistanceFromOrigin(HOrientedPoint3D* rh, HOrientedPoint3D* srh, i
 	map<int, OrientedPoint3D>::iterator it = historicMapFirst.begin(), its = historicMapSecond.begin();
 	map<int, OrientedPoint3D>::reverse_iterator rit = historicMapFirst.rbegin(), rits = historicMapSecond.rbegin();
 	Point3D last = it->second.getPosition(), lasts = its->second.getPosition(), origin(0.0, 0.0, 0.0);
-	cout << "DISTANCE " << last.distanceTo(origin) << "\t" << lasts.distanceTo(origin) << endl;
+	//cout << "DISTANCE " << last.distanceTo(origin) << "\t" << lasts.distanceTo(origin) << endl;
 	return last.distanceTo(origin)+ threshold > lasts.distanceTo(origin) && last.distanceTo(origin) - threshold < lasts.distanceTo(origin);	
 }
 
@@ -102,8 +102,8 @@ bool gotSimilarHeight(HOrientedPoint3D* rh, HOrientedPoint3D* srh, int threshold
 	map<int, OrientedPoint3D>::iterator it = historicMapFirst.begin(), its = historicMapSecond.begin();
 	map<int, OrientedPoint3D>::reverse_iterator rit = historicMapFirst.rbegin(), rits = historicMapSecond.rbegin();
 	Point3D last = it->second.getPosition(), lasts = its->second.getPosition();
-	cout << "HEIGHT " << last.getZ() << "\t" << lasts.getZ() << endl;
-	return last.getZ() + threshold > lasts.getZ() && last.getZ() - threshold < lasts.getZ() && gotSimilarDistanceFromOrigin(rh, srh, threshold);	
+	//cout << "HEIGHT " << last.getZ() << "\t" << lasts.getZ() << endl;
+	return last.getZ() + threshold > lasts.getZ() && last.getZ() - threshold < lasts.getZ();// && gotSimilarDistanceFromOrigin(rh, srh, threshold);	
 }
 
 void CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
@@ -112,50 +112,52 @@ void CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	Point3D sdir = historicDirection(srh);
 	Point3D speed = historicSpeed(rh);
 	Point3D sspeed = historicSpeed(srh);
-	cout << "\n\nUPDATE RECOGNITION" << endl;
+	//cout << "\n\nUPDATE RECOGNITION" << endl;
 	int threshold = 20;
 	float angleDifference = angleBetweenHands(rh, srh);
 	float angleMouvementDiff = angleMouvement(rh, srh);
-	if( speed.getZ() < -40 && sspeed.getZ() < -40)// && gotSimilarHeight(rh, srh, threshold))
+	//cout << speed.getZ() << " \t" << sspeed.getZ() << endl; 
+	if( speed.getZ() < -30 && sspeed.getZ() < -30)// && gotSimilarHeight(rh, srh, threshold))
 	{
 		setCmdName("leve");
 		setAmplitude((abs(dir.getZ()) + abs(sdir.getZ()))/2.0);
 		setSpeed((abs(speed.getZ()) + abs(sspeed.getZ()))/2.0);
 		setDirection(dir);
 	}
-	else if (speed.getZ() > 40 && sspeed.getZ() > 40)// && gotSimilarHeight(rh, srh, threshold))
+	else if (speed.getZ() > 30 && sspeed.getZ() > 30)// && gotSimilarHeight(rh, srh, threshold))
 	{
 		setCmdName("baisse");
 		setAmplitude((abs(dir.getZ()) + abs(sdir.getZ()))/2.0);
 		setSpeed((abs(speed.getZ()) + abs(sspeed.getZ()))/2.0);
 		setDirection(dir);
 	}
-	/*else if (angleMouvementDiff < -0.7)
+	else if (angleMouvementDiff < -0.7 && angleDifference < 0.1 && angleDifference > -0.1 && speed.getZ() < 1 && sspeed.getZ() < 1 && speed.getZ() > -1 && sspeed.getZ() > -1)
 	{
 		setCmdName("gauche");
 		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
 		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
 		setDirection(dir);
 	}
-	else if (angleMouvementDiff > 0.7)
+	else if (angleMouvementDiff > 0.7 && angleDifference < 0.1 && angleDifference > -0.1 && speed.getZ() < 1 && sspeed.getZ() < 1 && speed.getZ() > -1 && sspeed.getZ() > -1)
 	{
 		setCmdName("droite");
 		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
 		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
 		setDirection(dir);
-	}*/
-	else if (angleDifference > 0.7 && gotSimilarDistanceFromOrigin(rh, srh, threshold))
+	}
+	else if (angleDifference > 0.7 && gotSimilarDistanceFromOrigin(rh, srh, threshold) && speed.getZ() < 1 && sspeed.getZ() < 1 && speed.getZ() > -1 && sspeed.getZ() > -1)
 	{
 		setCmdName("Reserre");
 		setAmplitude((abs(dir.getZ()) + abs(sdir.getZ()))/2.0);
 		setSpeed((abs(speed.getZ()) + abs(sspeed.getZ()))/2.0);
 	}
-	else if (angleDifference < -0.7 && gotSimilarDistanceFromOrigin(rh, srh, threshold))
+	else if (angleDifference < -0.7 && gotSimilarDistanceFromOrigin(rh, srh, threshold) && speed.getZ() < 1 && sspeed.getZ() < 1 && speed.getZ() > -1 && sspeed.getZ() > -1)
 	{
 		setCmdName("Ecarte");
 		setAmplitude((abs(dir.getZ()) + abs(sdir.getZ()))/2.0);
 		setSpeed((abs(speed.getZ()) + abs(sspeed.getZ()))/2.0);
 	}
+	//cout << "UPDATE " << angleDifference << "\t" << angleMouvementDiff << "\t"<< gotSimilarDistanceFromOrigin(rh, srh, threshold) << "\t" << speed.getZ() << endl;
 }
 bool notSameLevel(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 {

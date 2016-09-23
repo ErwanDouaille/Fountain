@@ -196,7 +196,7 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 			{
 				vector<Point> handsTemp;
 				RotatedRect r = ellipses[e];
-				float a = r.angle*3.14159/180.0;
+				float a = r.angle*3.14159/180.0;	
 				int nbP = 0;
 
 				for(int c = 0; c < contourPoints.size();c++)

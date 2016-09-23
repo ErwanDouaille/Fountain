@@ -159,7 +159,6 @@ int main(int argc, char* argv[])
 	Environment* myEnv = new Environment();
 	myEnv->enableDataCopy(false);
 	myEnv->setHistoricLength(10);
-	
 	savedDelay = myEnv->getTime();
 
 	/******************************************************************* GENERATOR
@@ -234,12 +233,12 @@ int main(int argc, char* argv[])
 		bool hasDoneAimant = false, hasDoneGesture = false;
 		myEnv->update();
 		hasDoneAimant = blasterControl(bobs);
-		savedDelayAimantation = hasDoneAimant ? myEnv->getTime() : 0;
+		savedDelayAimantation = hasDoneAimant ? myEnv->getTime() : savedDelayAimantation + aimantationDelayForGesture < myEnv->getTime() ? 0 : savedDelayAimantation;
 		if(savedDelay + gestureDelay < myEnv->getTime() && !hasDoneAimant && savedDelayAimantation + aimantationDelayForGesture < myEnv->getTime())
 		{
 			if(!hasDoneGesture) hasDoneGesture = globalCommand(globCmd);
 			if(!hasDoneGesture) hasDoneGesture = gestureRecognition(odr);
-			savedDelay = hasDoneGesture ? myEnv->getTime() : 0;
+			savedDelay = hasDoneGesture ? myEnv->getTime() : savedDelay + gestureDelay < myEnv->getTime() ? 0 : savedDelay;
 		}
 		sendNbUsers(gt);
 		Sleep(1);
