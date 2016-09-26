@@ -72,6 +72,7 @@ bool gestureRecognition( OneDollarRecognizerObserver* odr)
 			highestGroup = pit->first;
 		}
 	}
+	cout << highest << endl;
 	if(highest>0.7 )
 	{
 		hasDoneGesture = true;
@@ -224,7 +225,7 @@ int main(int argc, char* argv[])
 		printf("Start environment OK.\n");
 	else
 		printf("%s.\n",myEnv->getLastError().c_str());
-
+		
 	client = lo_address_new(ipAdress.c_str(), port.c_str());
 
 	/***************************************************************** UPDATE LOOP

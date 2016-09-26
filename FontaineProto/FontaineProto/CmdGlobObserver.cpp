@@ -116,48 +116,50 @@ void CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	int threshold = 20;
 	float angleDifference = angleBetweenHands(rh, srh);
 	float angleMouvementDiff = angleMouvement(rh, srh);
-	//cout << speed.getZ() << " \t" << sspeed.getZ() << endl; 
-	if( speed.getZ() < -30 && sspeed.getZ() < -30)// && gotSimilarHeight(rh, srh, threshold))
+	if( speed.getZ() < -30 && sspeed.getZ() < -30)
 	{
 		setCmdName("leve");
 		setAmplitude((abs(dir.getZ()) + abs(sdir.getZ()))/2.0);
 		setSpeed((abs(speed.getZ()) + abs(sspeed.getZ()))/2.0);
 		setDirection(dir);
 	}
-	else if (speed.getZ() > 30 && sspeed.getZ() > 30)// && gotSimilarHeight(rh, srh, threshold))
+	else if (speed.getZ() > 30 && sspeed.getZ() > 30)
 	{
 		setCmdName("baisse");
 		setAmplitude((abs(dir.getZ()) + abs(sdir.getZ()))/2.0);
 		setSpeed((abs(speed.getZ()) + abs(sspeed.getZ()))/2.0);
 		setDirection(dir);
 	}
-	else if (angleMouvementDiff < -0.7 && angleDifference < 0.1 && angleDifference > -0.1 && speed.getZ() < 1 && sspeed.getZ() < 1 && speed.getZ() > -1 && sspeed.getZ() > -1)
-	{
-		setCmdName("gauche");
-		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
-		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
-		setDirection(dir);
-	}
-	else if (angleMouvementDiff > 0.7 && angleDifference < 0.1 && angleDifference > -0.1 && speed.getZ() < 1 && sspeed.getZ() < 1 && speed.getZ() > -1 && sspeed.getZ() > -1)
+	else if (angleDifference < 0.2 && angleDifference > -0.2 && angleMouvementDiff < -0.3 && 
+		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
 	{
 		setCmdName("droite");
 		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
 		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
 		setDirection(dir);
 	}
-	else if (angleDifference > 0.7 && gotSimilarDistanceFromOrigin(rh, srh, threshold) && speed.getZ() < 1 && sspeed.getZ() < 1 && speed.getZ() > -1 && sspeed.getZ() > -1)
+	else if (angleDifference < 0.2 && angleDifference > -0.2 && angleMouvementDiff > 0.3 && 
+		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
+	{
+		setCmdName("gauche");
+		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
+		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
+		setDirection(dir);
+	}
+	else if (angleDifference > 0.4 && angleMouvementDiff < 0.2  && angleMouvementDiff > -0.2  && 
+		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
 	{
 		setCmdName("Reserre");
 		setAmplitude((abs(dir.getZ()) + abs(sdir.getZ()))/2.0);
 		setSpeed((abs(speed.getZ()) + abs(sspeed.getZ()))/2.0);
 	}
-	else if (angleDifference < -0.7 && gotSimilarDistanceFromOrigin(rh, srh, threshold) && speed.getZ() < 1 && sspeed.getZ() < 1 && speed.getZ() > -1 && sspeed.getZ() > -1)
+	else if (angleDifference < -0.4 && angleMouvementDiff < 0.2  && angleMouvementDiff > -0.2  && 
+		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
 	{
 		setCmdName("Ecarte");
 		setAmplitude((abs(dir.getZ()) + abs(sdir.getZ()))/2.0);
 		setSpeed((abs(speed.getZ()) + abs(sspeed.getZ()))/2.0);
 	}
-	//cout << "UPDATE " << angleDifference << "\t" << angleMouvementDiff << "\t"<< gotSimilarDistanceFromOrigin(rh, srh, threshold) << "\t" << speed.getZ() << endl;
 }
 bool notSameLevel(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 {
