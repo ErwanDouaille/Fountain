@@ -72,8 +72,7 @@ bool gestureRecognition( OneDollarRecognizerObserver* odr)
 			highestGroup = pit->first;
 		}
 	}
-	cout << highest << endl;
-	if(highest>0.7 )
+	if(highest>0.6 )
 	{
 		hasDoneGesture = true;
 		if(highestGroup.compare("Circle") == 0)
