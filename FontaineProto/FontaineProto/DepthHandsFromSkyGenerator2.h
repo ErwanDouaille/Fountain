@@ -33,6 +33,7 @@ private:
 	int height;
 	int width;
 	int _newId;
+	int _removeNBFrames;
 	
 	unsigned int bufferSize;
 	
@@ -51,11 +52,14 @@ private:
 	
 	Mat frame;
 	Mat centers;
+	Mat _background;
 
 	IKinectSensor* m_pKinectSensor;
 	IDepthFrameReader* pDepthReader;
 	IDepthFrameSource* pDepthFrameSource; 
 	ICoordinateMapper* pCoordinateMapper;
+
+	string _removeBackgroundDirectory;
 
 	bool setupVariables();
 	bool initKinect();
@@ -103,7 +107,10 @@ public:
 
 	void setFountainHeight(int value) {fountainHeight = value;}
 	void setBodySize(int value) {bodySize = value;}
-	
+	void setRemoveNBFrames(int value) {_removeNBFrames = value;}
+	void setRemoveBackgroundDirectory(string value) {_removeBackgroundDirectory = value;}
+	void initRemoveBackground();
+
 	int getWidth() {return width;}
 	int getHeight() {return height;}
 	int getBodySize() {return bodySize;}
@@ -111,8 +118,9 @@ public:
 	vector<vector<Point> > getContours() {return contours;}
 	vector<RotatedRect> getEllipses() {return ellipses;}
 	map<int,Point3D> getHands() { return _hands;}
-
+	
 	Mat getFrame() { return frame;}
+	Mat getBackground() { return _background;}
 
 	ICoordinateMapper* getCoordinateMapper() {return pCoordinateMapper;}
 };

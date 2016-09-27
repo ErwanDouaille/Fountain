@@ -9,6 +9,8 @@ DepthHandsFromSkyGenerator2::DepthHandsFromSkyGenerator2(string name) : Generato
 	bufferSize = 0;
 	buffer = nullptr;
 	_newId = 0;
+	_removeNBFrames = 10;
+	_removeBackgroundDirectory = "";
 }
 
 DepthHandsFromSkyGenerator2::~DepthHandsFromSkyGenerator2(void)
@@ -113,12 +115,72 @@ bool DepthHandsFromSkyGenerator2::setupVariables()
 
 bool DepthHandsFromSkyGenerator2::start()
 {
+	cout << "Start OpenCVDrawObserver " << endl;	
 	setupVariables();
 	initKinect();
 
 	frame.create(height,width, CV_8UC1);
+	_background.create(0, 0, CV_8UC1);
 	centers.create(height,width, CV_8UC1);
+
+	initRemoveBackground();
 	return true;
+}
+
+void printProgress (double percentage)
+{
+	cout << "Removing background ..." << int(percentage * 100.0) << " %\r";
+	cout.flush();
+}
+
+void DepthHandsFromSkyGenerator2::initRemoveBackground()
+{
+	IDepthFrame* pDepthFrame = nullptr;
+	HRESULT hr;
+
+	if(_removeBackgroundDirectory.compare("") != 0)
+		_background = imread( _removeBackgroundDirectory, 1 );
+	if(_background.rows != height || _background.cols != width)
+	{
+		_background = Mat::zeros(height, width, CV_8UC1);
+		for (int i = 0; i != _removeNBFrames; i++)
+		{
+			printProgress((float)i/(float)_removeNBFrames);
+			hr = pDepthReader->AcquireLatestFrame( &pDepthFrame );
+			while(!SUCCEEDED(hr))
+			{
+				Sleep(50);
+				hr = pDepthReader->AcquireLatestFrame( &pDepthFrame );
+			}
+			hr = pDepthFrame->AccessUnderlyingBuffer( &bufferSize, &buffer );
+			for (int y = 0; y < height; ++y)
+			{
+				for (int x = 0; x < width; ++x)
+				{
+					if ((buffer[width*y+(width-1-x)] > 0)&&(buffer[width*y+(width-1-x)] < hauteurCamera-fountainHeight))
+					{
+						int value = (1.0 - (float)buffer[width*y+(width-1-x)] / (float)(hauteurCamera-fountainHeight)) * 255.0;
+						_background.at<uchar>(y, x) = _background.at<uchar>(y, x) < value ? value : _background.at<uchar>(y, x);
+					}
+				}
+			}
+			if( pDepthFrame != NULL )
+			{
+				pDepthFrame->Release();
+				pDepthFrame = NULL;
+			}
+		}
+		imwrite( "background.jpg", _background );
+		imshow("background", _background);
+
+		if( pDepthFrame != NULL )
+		{
+			pDepthFrame->Release();
+			pDepthFrame = NULL;
+		}
+		printProgress(1.0);
+		cout << endl;
+	}
 }
 
 bool DepthHandsFromSkyGenerator2::stop()
@@ -162,7 +224,7 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 	int currentId = 1;
 	for (int y = 0; y < height; ++y)
 		for (int x = 0; x < width; ++x)
-			if ((buffer[width*y+(width-1-x)] > 0)&&(buffer[width*y+(width-1-x)] < hauteurCamera-fountainHeight))
+			if ( buffer[width*y+(width-1-x)] > 0 && buffer[width*y+(width-1-x)] < hauteurCamera-fountainHeight && (1.0 - (float)buffer[width*y+(width-1-x)] / (float)(hauteurCamera-fountainHeight)) * 255.0 > _background.at<uchar>(y, x))
 				frame.at<uchar>(y, x) = 255;
 			else
 				frame.at<uchar>(y, x) = 0;
@@ -178,11 +240,11 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 	findContours( centers, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE );
 	for( int i = 0; i< contours.size(); i++ )
 		ellipses.push_back(minAreaRect(contours[i]));
-	
+
 	// détection forme des gens pour distinguer mains
 	// update : erodé seulement une fois ça suffit et on enlève la dilatation des 
 	erode(frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(7, 7)) );
-	
+
 	//  contours
 	findContours( frame, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
 
@@ -219,7 +281,7 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 			}
 		}
 	}
-	
+
 	// hands get all depth data close to the hand estimated position
 	for(int h = 0; h < hands.size();h++)
 	{
@@ -261,7 +323,7 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 		pCoordinateMapper->MapDepthPointToCameraSpace(depthPoint,dCpt,&cameraPoint);
 		currentHands.push_back(Point3D(cameraPoint.X,cameraPoint.Y,cameraPoint.Z));
 	}
-	
+
 	// supprimer les mains trop proches (< HANDS_PROXIMITY)
 	vector<int> toDel;
 	int index = 0;
@@ -276,10 +338,10 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 		if(toD) toDel.push_back(index);
 		index++;
 	}
-	
+
 	for(vector<int>::reverse_iterator rit = toDel.rbegin();rit != toDel.rend();rit++)
 		currentHands.erase(currentHands.begin()+ *rit);
-	
+
 	// associer les mains a un id et d'une frame a l autre les reassocier avec cet id ( par distance ?)
 	if(_hands.empty())
 	{
@@ -329,7 +391,6 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 		for(map<int,Point3D>::iterator hit = _hands.begin();hit != _hands.end();hit++)
 			updateData(_environment,g3D,to_string(_id+hit->first),"Kinectv2_Up_RightHands",LG_ORIENTEDPOINT3D_RIGHT_HAND,LG_ORIENTEDPOINT3D_RIGHT_HAND,_timestamp,OrientedPoint3D(Point3D(1000.0*hit->second.getX(),1000.0*hit->second.getY(),1000.0*hit->second.getZ()),Point3D(),1.0,1.0));
 	}
-
 
 	if( pDepthFrame != NULL )
 	{

@@ -28,9 +28,9 @@ using namespace std;
 using namespace lg;
 
 bool sortie = false, debugWindow = false;
-int fountainHeight, bodySize, gestureDelay, savedDelay, aimantationDelayForGesture, savedDelayAimantation, pastUsers = -1;
+int fountainHeight, bodySize, gestureDelay, savedDelay, aimantationDelayForGesture, savedDelayAimantation, pastUsers = -1, removeNbFrames = 10;
 lo_address client;
-string ipAdress, port;
+string ipAdress, port, removeBackgroudDirectory;
 
 void killHandler (int param)
 {
@@ -135,6 +135,14 @@ bool setup()
 		getline (myfile,line);
 		aimantationDelayForGesture = atoi(line.c_str());
 
+		getline (myfile,line);
+		getline (myfile,line);
+		removeNbFrames = atoi(line.c_str());
+
+		getline (myfile,line);
+		getline (myfile,line);
+		removeBackgroudDirectory = line;
+
 		myfile.close();
 	}
 	else 
@@ -166,6 +174,8 @@ int main(int argc, char* argv[])
 	DepthHandsFromSkyGenerator2* gt = new DepthHandsFromSkyGenerator2("DepthHandsFromSkyGenerator"); 
 	gt->setBodySize(bodySize);
 	gt->setFountainHeight(fountainHeight);
+	gt->setRemoveNBFrames(removeNbFrames);
+	gt->setRemoveBackgroundDirectory(removeBackgroudDirectory);
 	if(myEnv->registerNode(gt))
 		printf("Register DepthHandsFromSkyGenerator OK.\n");
 	else
