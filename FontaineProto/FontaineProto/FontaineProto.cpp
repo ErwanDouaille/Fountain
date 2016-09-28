@@ -76,11 +76,17 @@ bool gestureRecognition( OneDollarRecognizerObserver* odr)
 	{
 		hasDoneGesture = true;
 		if(highestGroup.compare("Circle") == 0)
+		{
+			cout << "Circle " << endl;
 			if (lo_send(client, "/cmdAnim/tourne", "i" , 1) == -1) // controlled blaster and hauteur
 				printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
+		}
 		if(highestGroup.compare("Circle_Inv") == 0)
+		{
+			cout << "Circle Inv " << endl;
 			if (lo_send(client, "/cmdAnim/tourne", "i" , -1) == -1) // controlled blaster and hauteur
 				printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
+		}
 	}
 	return hasDoneGesture;
 }

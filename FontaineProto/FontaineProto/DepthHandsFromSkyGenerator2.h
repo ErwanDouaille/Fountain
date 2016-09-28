@@ -2,7 +2,7 @@
 
 // distance minimum d'association de mains
 #define HAND_DISTANCE_FOR_ASSOCIATION2 150
-#define BIG_EROSION 50
+#define BIG_EROSION 30
 #define SMALL_EROSION 10
 #define HANDS_PIXELS_WIDTH 35
 #define MIN_NB_CONT 2
@@ -41,6 +41,7 @@ private:
 
 	float blasterWidth;
 	
+	vector<Point> hands;
 	vector<Point3D> currentHands;
 	vector<vector<Point> > contours;
 	vector<RotatedRect> ellipses;
@@ -117,6 +118,7 @@ public:
 
 	vector<vector<Point> > getContours() {return contours;}
 	vector<RotatedRect> getEllipses() {return ellipses;}
+	vector<Point> getTempHands() {return hands;}
 	map<int,Point3D> getHands() { return _hands;}
 	
 	Mat getFrame() { return frame;}

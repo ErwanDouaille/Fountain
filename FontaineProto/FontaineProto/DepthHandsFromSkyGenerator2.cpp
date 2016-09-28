@@ -140,6 +140,7 @@ void DepthHandsFromSkyGenerator2::initRemoveBackground()
 
 	if(_removeBackgroundDirectory.compare("") != 0)
 		_background = imread( _removeBackgroundDirectory, 1 );
+
 	if(_background.rows != height || _background.cols != width)
 	{
 		_background = Mat::zeros(height, width, CV_8UC1);
@@ -159,8 +160,8 @@ void DepthHandsFromSkyGenerator2::initRemoveBackground()
 				{
 					if ((buffer[width*y+(width-1-x)] > 0)&&(buffer[width*y+(width-1-x)] < hauteurCamera-fountainHeight))
 					{
-						int value = (1.0 - (float)buffer[width*y+(width-1-x)] / (float)(hauteurCamera-fountainHeight)) * 255.0;
-						_background.at<uchar>(y, x) = _background.at<uchar>(y, x) < value ? value : _background.at<uchar>(y, x);
+						int value = (int)((1.0 - (float)buffer[width*y+(width-1-x)] / (float)(hauteurCamera-fountainHeight)) * 255.0);
+						_background.at<uchar>(y, x) = (int)_background.at<uchar>(y, x) < value ? value : (int)_background.at<uchar>(y, x);
 					}
 				}
 			}
@@ -171,7 +172,7 @@ void DepthHandsFromSkyGenerator2::initRemoveBackground()
 			}
 		}
 		imwrite( "background.jpg", _background );
-		imshow("background", _background);
+		cv::imshow("background", _background);
 
 		if( pDepthFrame != NULL )
 		{
@@ -179,7 +180,7 @@ void DepthHandsFromSkyGenerator2::initRemoveBackground()
 			pDepthFrame = NULL;
 		}
 		printProgress(1.0);
-		cout << endl;
+		cout << endl << "Saving backgroud as background.jpg" << endl;
 	}
 }
 
@@ -207,8 +208,8 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 	IDepthFrame* pDepthFrame = nullptr;
 	HRESULT hr = pDepthReader->AcquireLatestFrame( &pDepthFrame );
 	vector<Vec4i> hierarchy;
-	vector<Point> hands;
 
+	hands.clear();
 	currentHands.clear();
 	ellipses.clear();
 	contours.clear();	
@@ -224,29 +225,33 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 	int currentId = 1;
 	for (int y = 0; y < height; ++y)
 		for (int x = 0; x < width; ++x)
-			if ( buffer[width*y+(width-1-x)] > 0 && buffer[width*y+(width-1-x)] < hauteurCamera-fountainHeight && (1.0 - (float)buffer[width*y+(width-1-x)] / (float)(hauteurCamera-fountainHeight)) * 255.0 > _background.at<uchar>(y, x))
+			if ( buffer[width*y+(width-1-x)] > 0 && buffer[width*y+(width-1-x)] < hauteurCamera-fountainHeight && (int)((1.0 - (float)buffer[width*y+(width-1-x)] / (float)(hauteurCamera-fountainHeight)) * 255.0) > (int)_background.at<uchar>(y, x)+10)
+			{
 				frame.at<uchar>(y, x) = 255;
+			}
 			else
 				frame.at<uchar>(y, x) = 0;
-
+	
 	// premiere approche pour choper les gens autour de la fontaine
 	// remplit le tableau ellipses avec les minAreaRect de chaque personne
-	erode(frame, centers, getStructuringElement(MORPH_ELLIPSE, Size(BIG_EROSION, BIG_EROSION)) );
-	dilate( centers, centers, getStructuringElement(MORPH_ELLIPSE, Size(BIG_EROSION, BIG_EROSION)) ); 
-
-	// DO not process center
+	cv::erode(frame, centers, getStructuringElement(MORPH_ELLIPSE, Size(BIG_EROSION, BIG_EROSION)) );
+	cv::dilate( centers, centers, getStructuringElement(MORPH_ELLIPSE, Size(BIG_EROSION, BIG_EROSION)) ); 
+	
+	cv::imshow("tesasst", centers);
+	// DO not process centers
 	cv::circle(centers,Point(width/2.0,height/2.0),100,0,-1);
 
-	findContours( centers, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE );
+	cv::findContours( centers, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE );
 	for( int i = 0; i< contours.size(); i++ )
 		ellipses.push_back(minAreaRect(contours[i]));
 
 	// détection forme des gens pour distinguer mains
 	// update : erodé seulement une fois ça suffit et on enlève la dilatation des 
-	erode(frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(7, 7)) );
-
+	cv::erode(frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(7, 7)) );
+	cv::dilate( frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)) ); 
+	cv::imshow("test", frame);
 	//  contours
-	findContours( frame, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+	cv::findContours( frame, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
 
 	for( int i = 0; i< contours.size(); i++ )
 	{
@@ -264,7 +269,7 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 				for(int c = 0; c < contourPoints.size();c++)
 				{
 					Point p = contourPoints[c];
-					if(((pow(((cos(a)*(p.x - r.center.x)) + (sin(a)*(p.y - r.center.y))),2.0f)/(pow(r.size.width*(float)bodySize/100.0f,2.0f))) + (pow(((sin(a)*(p.x - r.center.x)) - (cos(a)*(p.y - r.center.y))),2.0f)/(pow(r.size.height*(float)bodySize/100.0f,2.0f)))) <= 1.0f)
+					if(((pow(((cos(a)*(p.x - r.center.x)) + (sin(a)*(p.y - r.center.y))),2.0f)/(pow(r.size.width*(float)bodySize/100.0f,2.0f))) + (pow(((sin(a)*(p.x - r.center.x)) - (cos(a)*(p.y - r.center.y))),2.0f)/(pow(r.size.height*(float)bodySize/100.0f,2.0f)))) <= 1.0f )
 						nbP++;
 					else 
 						handsTemp.push_back(p);
@@ -280,6 +285,7 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 				}
 			}
 		}
+		// else faire les bras sans ellipses
 	}
 
 	// hands get all depth data close to the hand estimated position
