@@ -158,7 +158,7 @@ void DepthHandsFromSkyGenerator2::initRemoveBackground()
 			{
 				for (int x = 0; x < width; ++x)
 				{
-					if ((buffer[width*y+(width-1-x)] > 0)&&(buffer[width*y+(width-1-x)] < hauteurCamera-fountainHeight))
+					if ((buffer[width*y+(width-1-x)] > 0)&&(buffer[width*y+(width-1-x)] < hauteurCamera-fountainHeight) && x > 100 && x < width-100 && y > 100 && y < height -100)
 					{
 						int value = (int)((1.0 - (float)buffer[width*y+(width-1-x)] / (float)(hauteurCamera-fountainHeight)) * 255.0);
 						_background.at<uchar>(y, x) = (int)_background.at<uchar>(y, x) < value ? value : (int)_background.at<uchar>(y, x);
