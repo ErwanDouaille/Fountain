@@ -58,13 +58,6 @@ bool OpenCVDrawObserver::observe(map<string,Group3D*> g3D,map<string,Group2D*>,m
 		float a = r.angle*3.14159/180.0;
 		ellipse(frame, r.center, r.size*(float)bodySize/100.0f, r.angle, 0, 360, Scalar(255,255,0), 1, LINE_AA); 
 	}
-
-	// Draw temp hands
-	for(int e = 0; e < tempHands.size();e++)
-	{
-		Point r = tempHands[e];
-		rectangle(frame,cv::Rect(r.x, r.y, 20, 20),255);
-	}
 	
 	// Draw hands
 	for(map<string,Group3D*>::iterator git = g3D.begin();git != g3D.end(); git++)

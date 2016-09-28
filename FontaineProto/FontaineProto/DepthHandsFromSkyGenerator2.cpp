@@ -237,7 +237,7 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 	cv::dilate( centers, centers, getStructuringElement(MORPH_ELLIPSE, Size(BIG_EROSION, BIG_EROSION)) ); 
 	
 	// DO not process centers
-	cv::circle(centers,Point(width/2.0,height/2.0),100,0,-1);
+	cv::circle(centers, Point(width/2.0, height/2.0), 100, 0, -1);
 
 	cv::findContours( centers, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE );
 	for( int i = 0; i< contours.size(); i++ )
