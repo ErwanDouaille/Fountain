@@ -172,7 +172,6 @@ void DepthHandsFromSkyGenerator2::initRemoveBackground()
 			}
 		}
 		imwrite( "background.jpg", _background );
-		cv::imshow("background", _background);
 
 		if( pDepthFrame != NULL )
 		{
@@ -237,7 +236,6 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 	cv::erode(frame, centers, getStructuringElement(MORPH_ELLIPSE, Size(BIG_EROSION, BIG_EROSION)) );
 	cv::dilate( centers, centers, getStructuringElement(MORPH_ELLIPSE, Size(BIG_EROSION, BIG_EROSION)) ); 
 	
-	cv::imshow("tesasst", centers);
 	// DO not process centers
 	cv::circle(centers,Point(width/2.0,height/2.0),100,0,-1);
 
@@ -249,7 +247,7 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 	// update : erodé seulement une fois ça suffit et on enlève la dilatation des 
 	cv::erode(frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(7, 7)) );
 	cv::dilate( frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)) ); 
-	cv::imshow("test", frame);
+
 	//  contours
 	cv::findContours( frame, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
 

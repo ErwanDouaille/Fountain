@@ -106,6 +106,16 @@ bool gotSimilarHeight(HOrientedPoint3D* rh, HOrientedPoint3D* srh, int threshold
 	return last.getZ() + threshold > lasts.getZ() && last.getZ() - threshold < lasts.getZ();// && gotSimilarDistanceFromOrigin(rh, srh, threshold);	
 }
 
+float getAngleFromHandsToCenter(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
+{
+	map<int, OrientedPoint3D> historicMapFirst = rh->getHistoric(), historicMapSecond = srh->getHistoric();
+	map<int, OrientedPoint3D>::reverse_iterator rit = historicMapFirst.rbegin(), rits = historicMapSecond.rbegin();
+	Point3D last = rit->second.getPosition(), lasts = rits->second.getPosition();
+	Point3D p1(0.0, 0.0, 0.0);
+	Point3D p2((last.getX() + lasts.getX())/2.0, (last.getY() + lasts.getY())/2.0, 0.0);
+	return abs(atan2(p1.getY() - p2.getY(), p1.getX() - p2.getX()) * 180 / 3.14);
+}
+
 void CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 {
 	Point3D dir = historicDirection(rh);
@@ -150,15 +160,15 @@ void CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
 	{
 		setCmdName("Reserre");
-		setAmplitude((abs(dir.getZ()) + abs(sdir.getZ()))/2.0);
-		setSpeed((abs(speed.getZ()) + abs(sspeed.getZ()))/2.0);
+		setSpeed(getAngleFromHandsToCenter(rh, srh));
+		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
 	}
 	else if (angleDifference < -0.4 && angleMouvementDiff < 0.2  && angleMouvementDiff > -0.2  && 
 		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
 	{
 		setCmdName("Ecarte");
-		setAmplitude((abs(dir.getZ()) + abs(sdir.getZ()))/2.0);
-		setSpeed((abs(speed.getZ()) + abs(sspeed.getZ()))/2.0);
+		setSpeed(getAngleFromHandsToCenter(rh, srh));
+		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
 	}
 }
 bool notSameLevel(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
