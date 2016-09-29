@@ -1,12 +1,12 @@
 // IP ADDRESS
-127.0.0.1
+192.168.1.17
 // PORT, int value
 9998
 // FOUNTAIN HEIGHT CUTOFF, int value (was 100)
 100
 // DEBUG WINDOW, 0 or 1
 1
-// BODY SIZE, int value
+// BODY SIZE, int value (val Nico:80, val voulue:70)
 70
 // GESTURE DELAY ... MS
 500

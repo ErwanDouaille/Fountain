@@ -11,6 +11,8 @@ private:
 	float _speed, _amplitude;
 	string _cmdName;
 	Point3D _direction;
+	int controlPosIteration;
+	int controlPosLastTimestamp;
 
 public:
 	CmdGlobObserver(void);

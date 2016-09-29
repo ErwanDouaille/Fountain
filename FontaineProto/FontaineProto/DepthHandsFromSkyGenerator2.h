@@ -2,7 +2,7 @@
 
 // distance minimum d'association de mains
 #define HAND_DISTANCE_FOR_ASSOCIATION2 150
-#define BIG_EROSION 30
+#define BIG_EROSION 50
 #define SMALL_EROSION 10
 #define HANDS_PIXELS_WIDTH 35
 #define MIN_NB_CONT 2

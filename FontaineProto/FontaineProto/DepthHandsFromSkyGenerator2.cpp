@@ -246,17 +246,17 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 	// détection forme des gens pour distinguer mains
 	// update : erodé seulement une fois ça suffit et on enlève la dilatation des 
 	cv::erode(frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(7, 7)) );
-	cv::dilate( frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)) ); 
+	//cv::dilate( frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)) ); 
 
 	//  contours
 	cv::findContours( frame, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
 
 	for( int i = 0; i< contours.size(); i++ )
 	{
+		vector<Point> contourPoints;
+		approxPolyDP( contours[i], contourPoints, APPROX_PREC,true);
 		if (contourArea(contours[i]) > MIN_BLOB_SIZE)
 		{
-			vector<Point> contourPoints;
-			approxPolyDP( contours[i], contourPoints, APPROX_PREC,true);
 			for(int e = 0; e < ellipses.size();e++)
 			{
 				vector<Point> handsTemp;
@@ -267,7 +267,7 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 				for(int c = 0; c < contourPoints.size();c++)
 				{
 					Point p = contourPoints[c];
-					if(((pow(((cos(a)*(p.x - r.center.x)) + (sin(a)*(p.y - r.center.y))),2.0f)/(pow(r.size.width*(float)bodySize/100.0f,2.0f))) + (pow(((sin(a)*(p.x - r.center.x)) - (cos(a)*(p.y - r.center.y))),2.0f)/(pow(r.size.height*(float)bodySize/100.0f,2.0f)))) <= 1.0f )
+					if(((pow(((cos(a)*(p.x - r.center.x)) + (sin(a)*(p.y - r.center.y))),2.0f)/(pow(r.size.width*(float)bodySize/100.0f,2.0f))) + (pow(((sin(a)*(p.x - r.center.x)) - (cos(a)*(p.y - r.center.y))),2.0f)/(pow(r.size.height*(float)bodySize/100.0f,2.0f)))) <= 1.0f)
 						nbP++;
 					else 
 						handsTemp.push_back(p);
@@ -283,7 +283,42 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 				}
 			}
 		}
-		// else faire les bras sans ellipses
+		else
+		{
+			if(contourPoints.size() < 1)
+				continue;
+			Point bestPoint = contourPoints[0];
+			float distanceBestPoint = Point2D(width/2.0, height/2.0).distanceTo(Point2D(bestPoint.x, bestPoint.y));
+			for(int c = 0; c < contourPoints.size();c++)
+			{
+				Point p = contourPoints[c];
+				float distance = Point2D(width/2.0, height/2.0).distanceTo(Point2D(p.x, p.y));
+				if(distance < distanceBestPoint)
+				{
+					distanceBestPoint = distance;
+					bestPoint = p;
+				}
+			}
+			if (distanceBestPoint > 90)
+				hands.push_back(bestPoint);
+		}
+	}
+	
+	vector<Point> handsTmp = hands;
+	for(int h = 0; h < handsTmp.size();h++)
+	{
+		for(int e = 0; e < ellipses.size();e++)
+		{
+			RotatedRect r = ellipses[e];
+			float a = r.angle*3.14159/180.0;	
+			Point p = handsTmp[h];
+			if(((pow(((cos(a)*(p.x - r.center.x)) + (sin(a)*(p.y - r.center.y))),2.0f)/(pow(r.size.width*(float)bodySize/100.0f,2.0f))) + (pow(((sin(a)*(p.x - r.center.x)) - (cos(a)*(p.y - r.center.y))),2.0f)/(pow(r.size.height*(float)bodySize/100.0f,2.0f)))) <= 1.0f)
+			{
+				auto it = std::find(hands.begin(), hands.end(), p);
+				if(it != hands.end())
+					hands.erase(it);	
+			}
+		}
 	}
 
 	// hands get all depth data close to the hand estimated position

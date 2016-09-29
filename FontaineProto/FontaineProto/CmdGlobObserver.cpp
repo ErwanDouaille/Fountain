@@ -23,6 +23,8 @@ set<string> CmdGlobObserver::need() const
 bool CmdGlobObserver::start()
 {
 	cout << "Start Observer" << endl;
+	controlPosIteration = 0;
+	controlPosLastTimestamp = _timestamp;
 	return true;
 }
 
@@ -32,85 +34,82 @@ bool CmdGlobObserver::stop()
 	return true;
 }
 
+Point3D getLastPosition(HOrientedPoint3D* rh)
+{
+	map<int, OrientedPoint3D> historicMapFirst = rh->getHistoric();
+	map<int, OrientedPoint3D>::reverse_iterator rit = historicMapFirst.rbegin();
+	return rit->second.getPosition();
+}
+
+Point3D getFirstPosition(HOrientedPoint3D* rh)
+{
+	map<int, OrientedPoint3D> historicMapFirst = rh->getHistoric();
+	map<int, OrientedPoint3D>::iterator it = historicMapFirst.begin();
+	return it->second.getPosition();
+}
+
 Point3D historicDirection(HOrientedPoint3D* h)
 {
-	map<int, OrientedPoint3D> historicMap = h->getHistoric();
-	map<int, OrientedPoint3D>::iterator it = historicMap.begin();
-	map<int, OrientedPoint3D>::reverse_iterator rit = historicMap.rbegin();
-	Point3D last = it->second.getPosition();
-	Point3D first = rit->second.getPosition();
+	Point3D last = getLastPosition(h);
+	Point3D first = getFirstPosition(h);
 	return Point3D(first.getX() - last.getX(), first.getY() - last.getY(), first.getZ() - last.getZ());
 }
 
 Point3D historicSpeed(HOrientedPoint3D* h)
 {
-	map<int, OrientedPoint3D> historicMap = h->getHistoric();
-	map<int, OrientedPoint3D>::iterator it = historicMap.begin();
-	Point3D last = it->second.getPosition();	map<int, OrientedPoint3D>::reverse_iterator rit = historicMap.rbegin();
-
-	Point3D first = rit->second.getPosition();
-	return Point3D((first.getX() - last.getX())/historicMap.size(), (first.getY() - last.getY())/historicMap.size(), (first.getZ() - last.getZ())/historicMap.size());
+	Point3D last = getLastPosition(h);
+	Point3D first = getFirstPosition(h);
+	return Point3D((first.getX() - last.getX())/h->getHistoric().size(), 
+		(first.getY() - last.getY())/h->getHistoric().size(), 
+		(first.getZ() - last.getZ())/h->getHistoric().size());
 }
 
 float angleBetweenHands(HOrientedPoint3D* h, HOrientedPoint3D* rh)
 {
-	map<int, OrientedPoint3D> historicMapFirst = h->getHistoric(), historicMapSecond = rh->getHistoric();
-	map<int, OrientedPoint3D>::iterator it = historicMapFirst.begin(), its = historicMapSecond.begin();
-	map<int, OrientedPoint3D>::reverse_iterator rit = historicMapFirst.rbegin(), rits = historicMapSecond.rbegin();
-	Point3D last = it->second.getPosition(), lasts = its->second.getPosition();
-	Point3D first = rit->second.getPosition(), firsts = rits->second.getPosition();
+	Point3D last = getLastPosition(h);
+	Point3D first = getFirstPosition(h);
+	Point3D lasts = getLastPosition(rh);
+	Point3D firsts = getFirstPosition(rh);
 
 	float before = atan2(first.getY(), first.getX()) - atan2(firsts.getY(), firsts.getX());
 	float after = atan2(last.getY(), last.getX()) - atan2(lasts.getY(), lasts.getX());
 
 	before = before < 0 ? before += 2 * 3.14 : before;
 	after = after < 0 ? after += 2 * 3.14 : after;
-	//cout << "between " << before << "\t " << after << endl; 
 	return after - before;
 }
 
 float angleMouvement(HOrientedPoint3D* h, HOrientedPoint3D* rh)
 {
-	map<int, OrientedPoint3D> historicMapFirst = h->getHistoric(), historicMapSecond = rh->getHistoric();
-	map<int, OrientedPoint3D>::iterator it = historicMapFirst.begin(), its = historicMapSecond.begin();
-	map<int, OrientedPoint3D>::reverse_iterator rit = historicMapFirst.rbegin(), rits = historicMapSecond.rbegin();
-	Point3D last = it->second.getPosition(), lasts = its->second.getPosition();
-	Point3D first = rit->second.getPosition(), firsts = rits->second.getPosition();
+	Point3D last = getLastPosition(h);
+	Point3D first = getFirstPosition(h);
+	Point3D lasts = getLastPosition(rh);
+	Point3D firsts = getFirstPosition(rh);
 
 	float before = atan2((first.getY() + firsts.getY()) / 2.0, (first.getX() + firsts.getX()) / 2.0);
 	float after = atan2((last.getY() + lasts.getY()) / 2.0, (last.getX() + lasts.getX()) / 2.0);
-
-	/*before = before < 0 ? before += 2 * 3.14 : before;
-	after = after < 0 ? after += 2 * 3.14 : after;*/
-	//cout << "mouvement " << before << "\t " << after << endl; 
 	return after - before;
 }
 
 bool gotSimilarDistanceFromOrigin(HOrientedPoint3D* rh, HOrientedPoint3D* srh, int threshold)
 {
-	map<int, OrientedPoint3D> historicMapFirst = rh->getHistoric(), historicMapSecond = srh->getHistoric();
-	map<int, OrientedPoint3D>::iterator it = historicMapFirst.begin(), its = historicMapSecond.begin();
-	map<int, OrientedPoint3D>::reverse_iterator rit = historicMapFirst.rbegin(), rits = historicMapSecond.rbegin();
-	Point3D last = it->second.getPosition(), lasts = its->second.getPosition(), origin(0.0, 0.0, 0.0);
-	//cout << "DISTANCE " << last.distanceTo(origin) << "\t" << lasts.distanceTo(origin) << endl;
+	Point3D last = getLastPosition(rh);
+	Point3D lasts = getLastPosition(srh);
+	Point3D origin(0.0, 0.0, 0.0);
 	return last.distanceTo(origin)+ threshold > lasts.distanceTo(origin) && last.distanceTo(origin) - threshold < lasts.distanceTo(origin);	
 }
 
 bool gotSimilarHeight(HOrientedPoint3D* rh, HOrientedPoint3D* srh, int threshold)
 {
-	map<int, OrientedPoint3D> historicMapFirst = rh->getHistoric(), historicMapSecond = srh->getHistoric();
-	map<int, OrientedPoint3D>::iterator it = historicMapFirst.begin(), its = historicMapSecond.begin();
-	map<int, OrientedPoint3D>::reverse_iterator rit = historicMapFirst.rbegin(), rits = historicMapSecond.rbegin();
-	Point3D last = it->second.getPosition(), lasts = its->second.getPosition();
-	//cout << "HEIGHT " << last.getZ() << "\t" << lasts.getZ() << endl;
+	Point3D last = getLastPosition(rh);
+	Point3D lasts = getLastPosition(srh);
 	return last.getZ() + threshold > lasts.getZ() && last.getZ() - threshold < lasts.getZ();// && gotSimilarDistanceFromOrigin(rh, srh, threshold);	
 }
 
 float getAngleFromHandsToCenter(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 {
-	map<int, OrientedPoint3D> historicMapFirst = rh->getHistoric(), historicMapSecond = srh->getHistoric();
-	map<int, OrientedPoint3D>::reverse_iterator rit = historicMapFirst.rbegin(), rits = historicMapSecond.rbegin();
-	Point3D last = rit->second.getPosition(), lasts = rits->second.getPosition();
+	Point3D last = getLastPosition(rh);
+	Point3D lasts = getLastPosition(srh);
 	Point3D p1(0.0, 0.0, 0.0);
 	Point3D p2((last.getX() + lasts.getX())/2.0, (last.getY() + lasts.getY())/2.0, 0.0);
 	return abs(atan2(p1.getY() - p2.getY(), p1.getX() - p2.getX()) * 180 / 3.14);
@@ -122,23 +121,25 @@ void CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	Point3D sdir = historicDirection(srh);
 	Point3D speed = historicSpeed(rh);
 	Point3D sspeed = historicSpeed(srh);
-	//cout << "\n\nUPDATE RECOGNITION" << endl;
 	int threshold = 20;
 	float angleDifference = angleBetweenHands(rh, srh);
 	float angleMouvementDiff = angleMouvement(rh, srh);
+
 	if( speed.getZ() < -30 && sspeed.getZ() < -30)
-	{
-		setCmdName("leve");
-		setAmplitude((abs(dir.getZ()) + abs(sdir.getZ()))/2.0);
-		setSpeed((abs(speed.getZ()) + abs(sspeed.getZ()))/2.0);
-		setDirection(dir);
-	}
-	else if (speed.getZ() > 30 && sspeed.getZ() > 30)
 	{
 		setCmdName("baisse");
 		setAmplitude((abs(dir.getZ()) + abs(sdir.getZ()))/2.0);
 		setSpeed((abs(speed.getZ()) + abs(sspeed.getZ()))/2.0);
 		setDirection(dir);
+		controlPosIteration = 0;
+	}
+	else if (speed.getZ() > 30 && sspeed.getZ() > 30)
+	{
+		setCmdName("leve");
+		setAmplitude((abs(dir.getZ()) + abs(sdir.getZ()))/2.0);
+		setSpeed((abs(speed.getZ()) + abs(sspeed.getZ()))/2.0);
+		setDirection(dir);
+		controlPosIteration = 0;
 	}
 	else if (angleDifference < 0.2 && angleDifference > -0.2 && angleMouvementDiff < -0.3 && 
 		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
@@ -147,6 +148,7 @@ void CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
 		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
 		setDirection(dir);
+		controlPosIteration = 0;
 	}
 	else if (angleDifference < 0.2 && angleDifference > -0.2 && angleMouvementDiff > 0.3 && 
 		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
@@ -155,21 +157,47 @@ void CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
 		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
 		setDirection(dir);
+		controlPosIteration = 0;
 	}
 	else if (angleDifference > 0.4 && angleMouvementDiff < 0.2  && angleMouvementDiff > -0.2  && 
 		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
 	{
-		setCmdName("Reserre");
+		setCmdName("reserre");
 		setSpeed(getAngleFromHandsToCenter(rh, srh));
 		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
+		controlPosIteration = 0;
 	}
 	else if (angleDifference < -0.4 && angleMouvementDiff < 0.2  && angleMouvementDiff > -0.2  && 
 		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
 	{
-		setCmdName("Ecarte");
+		setCmdName("ecarte");
 		setSpeed(getAngleFromHandsToCenter(rh, srh));
 		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
+		controlPosIteration = 0;
 	}
+	else if (angleDifference < 0.2 && angleDifference > -0.2  &&
+		angleMouvementDiff < 0.2  && angleMouvementDiff > -0.2 && 
+		gotSimilarHeight(rh, srh, 20) &&
+		controlPosIteration > 3)
+	{
+		Point3D last = getLastPosition(rh);
+		Point3D lasts = getLastPosition(srh);
+		setCmdName("ctrlPos");
+		setSpeed(1790-((last.getZ() + lasts.getZ()) / 2.0));
+		setAmplitude(0.0);
+		controlPosIteration++;
+		controlPosLastTimestamp = _timestamp;
+	}
+	else if (angleDifference < 0.2 && angleDifference > -0.2  &&
+		angleMouvementDiff < 0.2  && angleMouvementDiff > -0.2 && 
+		gotSimilarHeight(rh, srh, 50))
+	{
+		controlPosIteration++;
+		controlPosLastTimestamp = _timestamp;
+	}
+
+	if(controlPosLastTimestamp + 3000 < _timestamp)
+		controlPosIteration = 0;
 }
 bool notSameLevel(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 {
