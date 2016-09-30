@@ -64,6 +64,12 @@ private:
 
 	bool setupVariables();
 	bool initKinect();
+	void removeHandsInsideEllipses();
+	void findHands();
+	void findContoursAndEllipses();
+	void convertDepthHandsToCameraHands();
+	void removeHandsProximity();
+	void removeHandsFrameBorderProximity();
 
 public:
 	DepthHandsFromSkyGenerator2(string name);

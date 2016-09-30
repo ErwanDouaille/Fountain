@@ -115,7 +115,15 @@ float getAngleFromHandsToCenter(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	return abs(atan2(p1.getY() - p2.getY(), p1.getX() - p2.getX()) * 180 / 3.14);
 }
 
-void CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
+float getAngleFromOneHandToCenter(HOrientedPoint3D* rh)
+{
+	Point3D last = getLastPosition(rh);
+	Point3D p1(0.0, 0.0, 0.0);
+	Point3D p2(last.getX(), last.getY(), 0.0);
+	return abs(atan2(p1.getY() - p2.getY(), p1.getX() - p2.getX()) * 180 / 3.14);
+}
+
+bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 {
 	Point3D dir = historicDirection(rh);
 	Point3D sdir = historicDirection(srh);
@@ -141,7 +149,7 @@ void CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		setDirection(dir);
 		controlPosIteration = 0;
 	}
-	else if (angleDifference < 0.2 && angleDifference > -0.2 && angleMouvementDiff < -0.3 && 
+	/*else if (angleDifference < 0.2 && angleDifference > -0.2 && angleMouvementDiff < -0.3 && 
 		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
 	{
 		setCmdName("droite");
@@ -158,7 +166,7 @@ void CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
 		setDirection(dir);
 		controlPosIteration = 0;
-	}
+	}*/
 	else if (angleDifference > 0.4 && angleMouvementDiff < 0.2  && angleMouvementDiff > -0.2  && 
 		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
 	{
@@ -198,7 +206,9 @@ void CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 
 	if(controlPosLastTimestamp + 3000 < _timestamp)
 		controlPosIteration = 0;
+	return getCmdName().compare("") == 0;
 }
+
 bool notSameLevel(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 {
 	int thresholdDistance = 10;
@@ -208,6 +218,31 @@ bool notSameLevel(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		(first.getZ() + thresholdDistance > second.getZ() && first.getZ() - thresholdDistance < second.getZ())
 		)
 		return false;
+}
+
+bool CmdGlobObserver::oneHandRecognition(HOrientedPoint3D* rh)
+{
+	Point3D dir = historicDirection(rh);
+	Point3D speed = historicSpeed(rh);
+	if(speed.getZ() < 5 && speed.getZ() > -5 &&
+		getAngleFromOneHandToCenter(rh) > 30.0)
+	{
+		Point3D last = getLastPosition(rh);
+		setCmdName("droite");
+		setSpeed(0.0);
+		setAmplitude(0.0);
+		return true;
+	}
+	else if(speed.getZ() < 5 && speed.getZ() > -5 &&
+		getAngleFromOneHandToCenter(rh) < -30.0)
+	{
+		Point3D last = getLastPosition(rh);
+		setCmdName("gauche");
+		setSpeed(0.0);
+		setAmplitude(0.0);
+		return true;
+	}
+	return false;
 }
 
 bool CmdGlobObserver::observe(map<string,Group3D*> g3D,map<string,Group2D*>,map<string,Group1D*>, map<string,GroupSwitch*>)
@@ -230,6 +265,8 @@ bool CmdGlobObserver::observe(map<string,Group3D*> g3D,map<string,Group2D*>,map<
 				HOrientedPoint3D* rh = *sit;		
 				if(rh->getHistoric().size() < 3 || rh->getLastTimestamp() != _timestamp)
 					continue;
+				if(oneHandRecognition(rh))
+					break;
 				for(map<string,Group3D*>::iterator sgit = git; sgit != g3D.end(); sgit++)		
 				{		
 					if(sgit->first.compare(git->first) == 0)		
@@ -243,7 +280,8 @@ bool CmdGlobObserver::observe(map<string,Group3D*> g3D,map<string,Group2D*>,map<
 							HOrientedPoint3D* srh = *ssit;		
 							if(srh->getHistoric().size() < 3 || srh->getLastTimestamp() != _timestamp || notSameLevel(rh, srh))
 								continue;
-							recognition(rh, srh);
+							if(recognition(rh, srh))
+								break;
 
 						}		
 					}		

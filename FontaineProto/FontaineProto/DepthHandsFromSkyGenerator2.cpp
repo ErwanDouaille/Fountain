@@ -202,55 +202,8 @@ bool DepthHandsFromSkyGenerator2::stop()
 	return true;
 }
 
-bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,Group2D*>& g2D,map<string,Group1D*>&,map<string,GroupSwitch*>&)
+void DepthHandsFromSkyGenerator2::findHands()
 {
-	IDepthFrame* pDepthFrame = nullptr;
-	HRESULT hr = pDepthReader->AcquireLatestFrame( &pDepthFrame );
-	vector<Vec4i> hierarchy;
-
-	hands.clear();
-	currentHands.clear();
-	ellipses.clear();
-	contours.clear();	
-
-	while(!SUCCEEDED(hr))
-	{
-		Sleep(50);
-		hr = pDepthReader->AcquireLatestFrame( &pDepthFrame );
-	}
-
-	hr = pDepthFrame->AccessUnderlyingBuffer( &bufferSize, &buffer );
-
-	int currentId = 1;
-	for (int y = 0; y < height; ++y)
-		for (int x = 0; x < width; ++x)
-			if ( buffer[width*y+(width-1-x)] > 0 && buffer[width*y+(width-1-x)] < hauteurCamera-fountainHeight && (int)((1.0 - (float)buffer[width*y+(width-1-x)] / (float)(hauteurCamera-fountainHeight)) * 255.0) > (int)_background.at<uchar>(y, x)+10)
-			{
-				frame.at<uchar>(y, x) = 255;
-			}
-			else
-				frame.at<uchar>(y, x) = 0;
-	
-	// premiere approche pour choper les gens autour de la fontaine
-	// remplit le tableau ellipses avec les minAreaRect de chaque personne
-	cv::erode(frame, centers, getStructuringElement(MORPH_ELLIPSE, Size(BIG_EROSION, BIG_EROSION)) );
-	cv::dilate( centers, centers, getStructuringElement(MORPH_ELLIPSE, Size(BIG_EROSION, BIG_EROSION)) ); 
-	
-	// DO not process centers
-	cv::circle(centers, Point(width/2.0, height/2.0), 100, 0, -1);
-
-	cv::findContours( centers, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE );
-	for( int i = 0; i< contours.size(); i++ )
-		ellipses.push_back(minAreaRect(contours[i]));
-
-	// détection forme des gens pour distinguer mains
-	// update : erodé seulement une fois ça suffit et on enlève la dilatation des 
-	cv::erode(frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(7, 7)) );
-	//cv::dilate( frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)) ); 
-
-	//  contours
-	cv::findContours( frame, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-
 	for( int i = 0; i< contours.size(); i++ )
 	{
 		vector<Point> contourPoints;
@@ -285,6 +238,7 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 		}
 		else
 		{
+			//check if contours without attached ellipses can be hands			
 			if(contourPoints.size() < 1)
 				continue;
 			Point bestPoint = contourPoints[0];
@@ -303,7 +257,11 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 				hands.push_back(bestPoint);
 		}
 	}
-	
+}
+
+void DepthHandsFromSkyGenerator2::removeHandsInsideEllipses()
+{
+	// ensure ellipses does not contains hands
 	vector<Point> handsTmp = hands;
 	for(int h = 0; h < handsTmp.size();h++)
 	{
@@ -320,7 +278,35 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 			}
 		}
 	}
+}
 
+void DepthHandsFromSkyGenerator2::findContoursAndEllipses()
+{
+	vector<Vec4i> hierarchy;
+	// premiere approche pour choper les gens autour de la fontaine
+	// remplit le tableau ellipses avec les minAreaRect de chaque personne
+	cv::erode(frame, centers, getStructuringElement(MORPH_ELLIPSE, Size(BIG_EROSION, BIG_EROSION)) );
+	cv::dilate( centers, centers, getStructuringElement(MORPH_ELLIPSE, Size(BIG_EROSION, BIG_EROSION)) ); 
+
+	// DO not process centers
+	cv::circle(centers, Point(width/2.0, height/2.0), 100, 0, -1);
+
+	cv::findContours( centers, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE );
+	for( int i = 0; i< contours.size(); i++ )
+		ellipses.push_back(minAreaRect(contours[i]));
+
+	// détection forme des gens pour distinguer mains
+	// update : erodé seulement une fois ça suffit et on enlève la dilatation des 
+	cv::erode(frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(7, 7)) );
+	//cv::dilate( frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)) ); 
+
+	//  contours
+	cv::findContours( frame, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+
+}
+
+void DepthHandsFromSkyGenerator2::convertDepthHandsToCameraHands()
+{
 	// hands get all depth data close to the hand estimated position
 	for(int h = 0; h < hands.size();h++)
 	{
@@ -362,7 +348,10 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 		pCoordinateMapper->MapDepthPointToCameraSpace(depthPoint,dCpt,&cameraPoint);
 		currentHands.push_back(Point3D(cameraPoint.X,cameraPoint.Y,cameraPoint.Z));
 	}
+}
 
+void DepthHandsFromSkyGenerator2::removeHandsProximity()
+{
 	// supprimer les mains trop proches (< HANDS_PROXIMITY)
 	vector<int> toDel;
 	int index = 0;
@@ -380,24 +369,74 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 
 	for(vector<int>::reverse_iterator rit = toDel.rbegin();rit != toDel.rend();rit++)
 		currentHands.erase(currentHands.begin()+ *rit);
+}
+
+void DepthHandsFromSkyGenerator2::removeHandsFrameBorderProximity()
+{
+	vector<Point> handsTmp = hands;
+	for(int h = 0; h < handsTmp.size();h++)
+	{
+		if((width - 20 < handsTmp[h].x && width > handsTmp[h].x) || (20 > handsTmp[h].x && 0 < handsTmp[h].x) || 
+			(height - 20 < handsTmp[h].y && height > handsTmp[h].y) || (20 > handsTmp[h].y && 0 < handsTmp[h].y))
+		{
+			auto it = std::find(hands.begin(), hands.end(), handsTmp[h]);
+			if(it != hands.end())
+				hands.erase(it);	
+		}
+	}
+}
+
+bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,Group2D*>& g2D,map<string,Group1D*>&,map<string,GroupSwitch*>&)
+{
+	IDepthFrame* pDepthFrame = nullptr;
+	HRESULT hr = pDepthReader->AcquireLatestFrame( &pDepthFrame );
+	hands.clear();
+	currentHands.clear();
+	ellipses.clear();
+	contours.clear();	
+
+	while(!SUCCEEDED(hr))
+	{
+		Sleep(50);
+		hr = pDepthReader->AcquireLatestFrame( &pDepthFrame );
+	}
+
+	hr = pDepthFrame->AccessUnderlyingBuffer( &bufferSize, &buffer );
+
+	int currentId = 1;
+	for (int y = 0; y < height; ++y)
+		for (int x = 0; x < width; ++x)
+			if ( buffer[width*y+(width-1-x)] > 0 && buffer[width*y+(width-1-x)] < hauteurCamera-fountainHeight && (int)((1.0 - (float)buffer[width*y+(width-1-x)] / (float)(hauteurCamera-fountainHeight)) * 255.0) > (int)_background.at<uchar>(y, x)+10)
+			{
+				frame.at<uchar>(y, x) = 255;
+			}
+			else
+				frame.at<uchar>(y, x) = 0;
+
+
+	findContoursAndEllipses();
+	findHands();	
+	removeHandsInsideEllipses();
+	//removeHandsFrameBorderProximity();
+	convertDepthHandsToCameraHands();
+	removeHandsProximity();
+
 
 	// associer les mains a un id et d'une frame a l autre les reassocier avec cet id ( par distance ?)
-	if(_hands.empty())
-	{
-		for(vector<Point3D>::iterator pit = currentHands.begin();pit != currentHands.end();pit++)
-			_hands[_newId++] = *pit;
-	}
-	else
+	if(!_hands.empty())
 	{
 		set<int> ids;
 		for(map<int,Point3D>::iterator mit = _hands.begin();mit != _hands.end();mit++)
 			ids.insert(mit->first);
 
-		for(vector<Point3D>::iterator pit = currentHands.begin();pit != currentHands.end();pit++){
+		for(vector<Point3D>::iterator pit = currentHands.begin();pit != currentHands.end();pit++)
+		{
 			int idToSyncWith = -1;
 			float dist = HAND_DISTANCE_FOR_ASSOCIATION2;
-			for(set<int>::iterator iit = ids.begin();iit != ids.end();iit++){
-				if(_hands[*iit].distanceTo(*pit) < dist){
+			for(set<int>::iterator iit = ids.begin();iit != ids.end();iit++)
+			{
+				if(_hands[*iit].distanceTo(*pit) < dist)
+				{
 					idToSyncWith = *iit;
 					dist = _hands[*iit].distanceTo(*pit);
 				}
@@ -430,6 +469,9 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 		for(map<int,Point3D>::iterator hit = _hands.begin();hit != _hands.end();hit++)
 			updateData(_environment,g3D,to_string(_id+hit->first),"Kinectv2_Up_RightHands",LG_ORIENTEDPOINT3D_RIGHT_HAND,LG_ORIENTEDPOINT3D_RIGHT_HAND,_timestamp,OrientedPoint3D(Point3D(1000.0*hit->second.getX(),1000.0*hit->second.getY(),1000.0*hit->second.getZ()),Point3D(),1.0,1.0));
 	}
+	else
+		for(vector<Point3D>::iterator pit = currentHands.begin();pit != currentHands.end();pit++)
+			_hands[_newId++] = *pit;
 
 	if( pDepthFrame != NULL )
 	{

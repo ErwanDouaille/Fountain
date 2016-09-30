@@ -14,6 +14,9 @@ private:
 	int controlPosIteration;
 	int controlPosLastTimestamp;
 
+	bool recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh);
+	bool oneHandRecognition(HOrientedPoint3D* rh);
+
 public:
 	CmdGlobObserver(void);
 	~CmdGlobObserver(void);
@@ -25,7 +28,6 @@ public:
 
 	bool observe(map<string,Group3D*>,map<string,Group2D*>,map<string,Group1D*>, map<string,GroupSwitch*>);
 
-	void recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh);
 	void setSpeed(float value) {_speed = value;}
 	void setAmplitude(float value) {_amplitude = value;}
 	void setCmdName(string value) {_cmdName = value;}
