@@ -70,6 +70,7 @@ private:
 	void convertDepthHandsToCameraHands();
 	void removeHandsProximity();
 	void removeHandsFrameBorderProximity();
+	void removeHandsBehindEllipses();
 
 public:
 	DepthHandsFromSkyGenerator2(string name);

@@ -346,7 +346,13 @@ void DepthHandsFromSkyGenerator2::convertDepthHandsToCameraHands()
 		depthPoint.X = static_cast<float>(xCpt); 
 		depthPoint.Y = static_cast<float>(yCpt); 
 		pCoordinateMapper->MapDepthPointToCameraSpace(depthPoint,dCpt,&cameraPoint);
-		currentHands.push_back(Point3D(cameraPoint.X,cameraPoint.Y,cameraPoint.Z));
+		
+		Point3D point(cameraPoint.X, cameraPoint.Y, cameraPoint.Z);
+		//cout << point.getX() << " - " << point.getY() << "\t" << point.distanceTo(Point2D(0.0, 0.0)) << endl;
+		if(point.distanceTo(Point3D(0.0, 0.0, hauteurCamera/1000)) < 0.8) //meters
+		{
+			currentHands.push_back(Point3D(cameraPoint.X,cameraPoint.Y,cameraPoint.Z));
+		}
 	}
 }
 
@@ -371,17 +377,26 @@ void DepthHandsFromSkyGenerator2::removeHandsProximity()
 		currentHands.erase(currentHands.begin()+ *rit);
 }
 
-void DepthHandsFromSkyGenerator2::removeHandsFrameBorderProximity()
+void DepthHandsFromSkyGenerator2::removeHandsBehindEllipses()
 {
+	// ensure hands are not behind ellipses
 	vector<Point> handsTmp = hands;
+	Point origin(0.0, 0.0);
 	for(int h = 0; h < handsTmp.size();h++)
 	{
-		if((width - 20 < handsTmp[h].x && width > handsTmp[h].x) || (20 > handsTmp[h].x && 0 < handsTmp[h].x) || 
-			(height - 20 < handsTmp[h].y && height > handsTmp[h].y) || (20 > handsTmp[h].y && 0 < handsTmp[h].y))
+		Point p = handsTmp[h];
+		for(int e = 0; e < ellipses.size();e++)
 		{
-			auto it = std::find(hands.begin(), hands.end(), handsTmp[h]);
-			if(it != hands.end())
-				hands.erase(it);	
+			RotatedRect r = ellipses[e];
+			Point center = r.center;
+			Point normal = origin - center;
+			float a = r.angle*3.14159/180.0;	
+			if(((pow(((cos(a)*(p.x - center.x)) + (sin(a)*(p.y - center.y))),2.0f)/(pow(r.size.width*(float)bodySize/100.0f,2.0f))) + (pow(((sin(a)*(p.x - center.x)) - (cos(a)*(p.y - center.y))),2.0f)/(pow(r.size.height*(float)bodySize/100.0f,2.0f)))) <= 1.0f)
+			{
+				auto it = std::find(hands.begin(), hands.end(), p);
+				if(it != hands.end())
+					hands.erase(it);	
+			}
 		}
 	}
 }
@@ -407,20 +422,16 @@ bool DepthHandsFromSkyGenerator2::generate(map<string,Group3D*>& g3D,map<string,
 	for (int y = 0; y < height; ++y)
 		for (int x = 0; x < width; ++x)
 			if ( buffer[width*y+(width-1-x)] > 0 && buffer[width*y+(width-1-x)] < hauteurCamera-fountainHeight && (int)((1.0 - (float)buffer[width*y+(width-1-x)] / (float)(hauteurCamera-fountainHeight)) * 255.0) > (int)_background.at<uchar>(y, x)+10)
-			{
 				frame.at<uchar>(y, x) = 255;
-			}
 			else
 				frame.at<uchar>(y, x) = 0;
-
 
 	findContoursAndEllipses();
 	findHands();	
 	removeHandsInsideEllipses();
-	//removeHandsFrameBorderProximity();
+	removeHandsBehindEllipses();
 	convertDepthHandsToCameraHands();
 	removeHandsProximity();
-
 
 	// associer les mains a un id et d'une frame a l autre les reassocier avec cet id ( par distance ?)
 	if(!_hands.empty())

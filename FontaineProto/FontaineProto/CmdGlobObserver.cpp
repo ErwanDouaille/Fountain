@@ -218,6 +218,7 @@ bool notSameLevel(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		(first.getZ() + thresholdDistance > second.getZ() && first.getZ() - thresholdDistance < second.getZ())
 		)
 		return false;
+	return true;
 }
 
 bool CmdGlobObserver::oneHandRecognition(HOrientedPoint3D* rh)
@@ -265,8 +266,8 @@ bool CmdGlobObserver::observe(map<string,Group3D*> g3D,map<string,Group2D*>,map<
 				HOrientedPoint3D* rh = *sit;		
 				if(rh->getHistoric().size() < 3 || rh->getLastTimestamp() != _timestamp)
 					continue;
-				if(oneHandRecognition(rh))
-					break;
+			/*	if(oneHandRecognition(rh))
+					break;*/
 				for(map<string,Group3D*>::iterator sgit = git; sgit != g3D.end(); sgit++)		
 				{		
 					if(sgit->first.compare(git->first) == 0)		
@@ -278,7 +279,7 @@ bool CmdGlobObserver::observe(map<string,Group3D*> g3D,map<string,Group2D*>,map<
 						for(set<HOrientedPoint3D*> ::iterator ssit = rhs.begin();ssit != rhs.end();ssit++)		
 						{		
 							HOrientedPoint3D* srh = *ssit;		
-							if(srh->getHistoric().size() < 3 || srh->getLastTimestamp() != _timestamp || notSameLevel(rh, srh))
+							if(srh->getHistoric().size() < 3 || srh->getLastTimestamp() != _timestamp || !notSameLevel(rh, srh))
 								continue;
 							if(recognition(rh, srh))
 								break;
