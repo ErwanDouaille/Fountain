@@ -211,6 +211,7 @@ bool DepthHandsFromSkyGenerator2::stop()
 
 void DepthHandsFromSkyGenerator2::findHands()
 {
+	Point2D origin(width/2.0, height/2.0);
 	for( int i = 0; i< contours.size(); i++ )
 	{
 		vector<Point> contourPoints;
@@ -221,13 +222,34 @@ void DepthHandsFromSkyGenerator2::findHands()
 			{
 				vector<Point> handsTemp;
 				RotatedRect r = ellipses[e];
-				int nbP = 0;
+				int nbP = 0, index = -1;
 				for(int c = 0; c < contourPoints.size();c++)
 				{
 					if(isInsideEllipse(r, contourPoints[c], bodySize))
+					{
+						index = -1;
 						nbP++;
+					}
 					else 
+					{
+					
+						if(index == -1)
+							index == e;
+						// remove "elbow hands"
+						else 
+						{
+							Point2D past(contourPoints[index].x, contourPoints[index].y), 
+								current(contourPoints[c].x, contourPoints[c].y);
+							if (past.distanceTo(origin) > current.distanceTo(origin))
+							{
+								auto it = std::find(handsTemp.begin(), handsTemp.end(), contourPoints[c]);
+								if(it != handsTemp.end())
+									handsTemp.erase(it);	
+								index == e;
+							}
+						}
 						handsTemp.push_back(contourPoints[c]);
+					}
 				} 
 
 				// check if the ellipse is the one associated with contours ( check centers ?)
