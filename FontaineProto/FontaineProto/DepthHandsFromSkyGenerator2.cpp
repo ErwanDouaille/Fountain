@@ -24,6 +24,13 @@ Node* DepthHandsFromSkyGenerator2::clone(string cloneName) const
 	return (Node*)this;
 }
 
+bool isInsideEllipse(RotatedRect r, Point p, int bodySize)
+{
+	Point center = r.center;
+	float a = r.angle*3.14159/180.0;	
+	return ((pow(((cos(a)*(p.x - center.x)) + (sin(a)*(p.y - center.y))),2.0f)/(pow(r.size.width*(float)bodySize/100.0f,2.0f))) + (pow(((sin(a)*(p.x - center.x)) - (cos(a)*(p.y - center.y))),2.0f)/(pow(r.size.height*(float)bodySize/100.0f,2.0f)))) <= 1.0f;
+}
+
 bool DepthHandsFromSkyGenerator2::initKinect()
 {
 	HRESULT hr;
@@ -214,16 +221,13 @@ void DepthHandsFromSkyGenerator2::findHands()
 			{
 				vector<Point> handsTemp;
 				RotatedRect r = ellipses[e];
-				float a = r.angle*3.14159/180.0;	
 				int nbP = 0;
-
 				for(int c = 0; c < contourPoints.size();c++)
 				{
-					Point p = contourPoints[c];
-					if(((pow(((cos(a)*(p.x - r.center.x)) + (sin(a)*(p.y - r.center.y))),2.0f)/(pow(r.size.width*(float)bodySize/100.0f,2.0f))) + (pow(((sin(a)*(p.x - r.center.x)) - (cos(a)*(p.y - r.center.y))),2.0f)/(pow(r.size.height*(float)bodySize/100.0f,2.0f)))) <= 1.0f)
+					if(isInsideEllipse(r, contourPoints[c], bodySize))
 						nbP++;
 					else 
-						handsTemp.push_back(p);
+						handsTemp.push_back(contourPoints[c]);
 				} 
 
 				// check if the ellipse is the one associated with contours ( check centers ?)
@@ -270,7 +274,7 @@ void DepthHandsFromSkyGenerator2::removeHandsInsideEllipses()
 			RotatedRect r = ellipses[e];
 			float a = r.angle*3.14159/180.0;	
 			Point p = handsTmp[h];
-			if(((pow(((cos(a)*(p.x - r.center.x)) + (sin(a)*(p.y - r.center.y))),2.0f)/(pow(r.size.width*(float)bodySize/100.0f,2.0f))) + (pow(((sin(a)*(p.x - r.center.x)) - (cos(a)*(p.y - r.center.y))),2.0f)/(pow(r.size.height*(float)bodySize/100.0f,2.0f)))) <= 1.0f)
+			if(isInsideEllipse(r, p, bodySize))
 			{
 				auto it = std::find(hands.begin(), hands.end(), p);
 				if(it != hands.end())
@@ -381,19 +385,17 @@ void DepthHandsFromSkyGenerator2::removeHandsBehindEllipses()
 {
 	// ensure hands are not behind ellipses
 	vector<Point> handsTmp = hands;
-	Point origin(0.0, 0.0);
+	Point2D origin(width/2.0, height/2.0);
 	for(int h = 0; h < handsTmp.size();h++)
 	{
-		Point p = handsTmp[h];
+		Point2D p = Point2D(handsTmp[h].x, handsTmp[h].y);
 		for(int e = 0; e < ellipses.size();e++)
 		{
 			RotatedRect r = ellipses[e];
-			Point center = r.center;
-			Point normal = origin - center;
-			float a = r.angle*3.14159/180.0;	
-			if(((pow(((cos(a)*(p.x - center.x)) + (sin(a)*(p.y - center.y))),2.0f)/(pow(r.size.width*(float)bodySize/100.0f,2.0f))) + (pow(((sin(a)*(p.x - center.x)) - (cos(a)*(p.y - center.y))),2.0f)/(pow(r.size.height*(float)bodySize/100.0f,2.0f)))) <= 1.0f)
+			Point2D center = Point2D(r.center.x, r.center.y);
+			if( center.distanceTo(origin) < p.distanceTo(origin))
 			{
-				auto it = std::find(hands.begin(), hands.end(), p);
+				auto it = std::find(hands.begin(), hands.end(), handsTmp[h]);
 				if(it != hands.end())
 					hands.erase(it);	
 			}
