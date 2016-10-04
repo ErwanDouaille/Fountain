@@ -234,7 +234,7 @@ void DepthHandsFromSkyGenerator2::findHands()
 					{
 					
 						if(index == -1)
-							index == e;
+							index = c;
 						// remove "elbow hands"
 						else 
 						{
@@ -242,10 +242,10 @@ void DepthHandsFromSkyGenerator2::findHands()
 								current(contourPoints[c].x, contourPoints[c].y);
 							if (past.distanceTo(origin) > current.distanceTo(origin))
 							{
-								auto it = std::find(handsTemp.begin(), handsTemp.end(), contourPoints[c]);
+								auto it = std::find(handsTemp.begin(), handsTemp.end(), contourPoints[index]);
 								if(it != handsTemp.end())
 									handsTemp.erase(it);	
-								index == e;
+								index = c;
 							}
 						}
 						handsTemp.push_back(contourPoints[c]);
@@ -374,7 +374,8 @@ void DepthHandsFromSkyGenerator2::convertDepthHandsToCameraHands()
 		pCoordinateMapper->MapDepthPointToCameraSpace(depthPoint,dCpt,&cameraPoint);
 		
 		Point3D point(cameraPoint.X, cameraPoint.Y, cameraPoint.Z);
-		//cout << point.getX() << " - " << point.getY() << "\t" << point.distanceTo(Point2D(0.0, 0.0)) << endl;
+
+		// ensure hand is close to the foutain origin
 		if(point.distanceTo(Point3D(0.0, 0.0, hauteurCamera/1000)) < 0.8) //meters
 		{
 			currentHands.push_back(Point3D(cameraPoint.X,cameraPoint.Y,cameraPoint.Z));
