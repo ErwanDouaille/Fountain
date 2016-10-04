@@ -167,7 +167,7 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		setDirection(dir);
 		controlPosIteration = 0;
 	}*/
-	else if (angleDifference > 0.4 && angleMouvementDiff < 0.2  && angleMouvementDiff > -0.2  && 
+	else if (angleDifference > 0.3 && angleMouvementDiff < 0.2  && angleMouvementDiff > -0.2  && 
 		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
 	{
 		setCmdName("reserre");
@@ -175,7 +175,7 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
 		controlPosIteration = 0;
 	}
-	else if (angleDifference < -0.4 && angleMouvementDiff < 0.2  && angleMouvementDiff > -0.2  && 
+	else if (angleDifference < -0.3 && angleMouvementDiff < 0.2  && angleMouvementDiff > -0.2  && 
 		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
 	{
 		setCmdName("ecarte");
@@ -183,8 +183,8 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
 		controlPosIteration = 0;
 	}
-	else if (angleDifference < 0.2 && angleDifference > -0.2  &&
-		angleMouvementDiff < 0.2  && angleMouvementDiff > -0.2 && 
+	else if (angleDifference < 0.1 && angleDifference > -0.1  &&
+		angleMouvementDiff < 0.1  && angleMouvementDiff > -0.1 && 
 		gotSimilarHeight(rh, srh, 20) &&
 		controlPosIteration > 3)
 	{
