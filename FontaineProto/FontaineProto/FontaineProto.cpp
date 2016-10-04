@@ -27,7 +27,7 @@
 using namespace std;
 using namespace lg;
 
-bool sortie = false, debugWindow = false;
+bool sortie = false, debugWindow = false, controlPosition = false;
 int fountainHeight, bodySize, gestureDelay, savedDelay, aimantationDelayForGesture, savedDelayAimantation, pastUsers = -1, removeNbFrames = 10;
 lo_address client;
 string ipAdress, port, removeBackgroudDirectory;
@@ -53,8 +53,10 @@ bool globalCommand(CmdGlobObserver* cmd)
 	if(cmd->getCmdName().compare("") == 0)
 		return false;
 	string name = "/cmdGlob/" + cmd->getCmdName();
-	cout << name << "\t" << cmd->getSpeed() << "\t" << cmd->getAmplitude() << endl;
-	if (lo_send(client, name.c_str(), "fffff", cmd->getSpeed(), cmd->getAmplitude(), cmd->getDirection().getX(), cmd->getDirection().getY(), cmd->getDirection().getZ()) == -1) // controlled blaster and hauteur
+	if(debugWindow)
+		cout << name << "\t" << cmd->getSpeed() << "\t" << cmd->getAmplitude() << endl;
+	controlPosition = name.compare("ctrlPos") == 0 ? true : false;
+	if(lo_send(client, name.c_str(), "fffff", cmd->getSpeed(), cmd->getAmplitude(), cmd->getDirection().getX(), cmd->getDirection().getY(), cmd->getDirection().getZ()) == -1) // controlled blaster and hauteur
 		printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
 	return true;
 }
@@ -77,17 +79,20 @@ bool gestureRecognition( OneDollarRecognizerObserver* odr)
 		hasDoneGesture = true;
 		if(highestGroup.compare("Circle") == 0)
 		{
-			cout << "Circle " << endl;
+			if(debugWindow)
+				cout << "Circle " << endl;
 			if (lo_send(client, "/cmdAnim/tourne", "i" , 1) == -1) // controlled blaster and hauteur
 				printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
 		}
 		if(highestGroup.compare("Circle_Inv") == 0)
-		{
-			cout << "Circle Inv " << endl;
+		{			
+			if(debugWindow)
+				cout << "Circle Inv " << endl;
 			if (lo_send(client, "/cmdAnim/tourne", "i" , -1) == -1) // controlled blaster and hauteur
 				printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
 		}
 	}
+	controlPosition = false;
 	return hasDoneGesture;
 }
 
@@ -104,6 +109,7 @@ bool blasterControl( BlasterObserver* bobs)
 				printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
 		}
 	}
+	controlPosition = aimantControl ? false : controlPosition;
 	return aimantControl;
 }
 
@@ -252,7 +258,7 @@ int main(int argc, char* argv[])
 		savedDelayAimantation = hasDoneAimant ? myEnv->getTime() : savedDelayAimantation + aimantationDelayForGesture < myEnv->getTime() ? 0 : savedDelayAimantation;
 		if(savedDelay + gestureDelay < myEnv->getTime() && !hasDoneAimant && savedDelayAimantation + aimantationDelayForGesture < myEnv->getTime())
 		{
-			if(!hasDoneGesture) hasDoneGesture = globalCommand(globCmd);
+			if(!hasDoneGesture || controlPosition) hasDoneGesture = globalCommand(globCmd);
 			if(!hasDoneGesture) hasDoneGesture = gestureRecognition(odr);
 			savedDelay = hasDoneGesture ? myEnv->getTime() : savedDelay + gestureDelay < myEnv->getTime() ? 0 : savedDelay;
 		}

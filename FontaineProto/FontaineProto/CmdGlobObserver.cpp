@@ -150,22 +150,22 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		controlPosIteration = 0;
 	}
 	/*else if (angleDifference < 0.2 && angleDifference > -0.2 && angleMouvementDiff < -0.3 && 
-		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
+	speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
 	{
-		setCmdName("droite");
-		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
-		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
-		setDirection(dir);
-		controlPosIteration = 0;
+	setCmdName("droite");
+	setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
+	setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
+	setDirection(dir);
+	controlPosIteration = 0;
 	}
 	else if (angleDifference < 0.2 && angleDifference > -0.2 && angleMouvementDiff > 0.3 && 
-		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
+	speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
 	{
-		setCmdName("gauche");
-		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
-		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
-		setDirection(dir);
-		controlPosIteration = 0;
+	setCmdName("gauche");
+	setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
+	setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
+	setDirection(dir);
+	controlPosIteration = 0;
 	}*/
 	else if (angleDifference > 0.3 && angleMouvementDiff < 0.2  && angleMouvementDiff > -0.2  && 
 		speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
@@ -186,7 +186,7 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	else if (angleDifference < 0.1 && angleDifference > -0.1  &&
 		angleMouvementDiff < 0.1  && angleMouvementDiff > -0.1 && 
 		gotSimilarHeight(rh, srh, 20) &&
-		controlPosIteration > 3)
+		controlPosIteration > 5)
 	{
 		Point3D last = getLastPosition(rh);
 		Point3D lasts = getLastPosition(srh);
@@ -266,8 +266,8 @@ bool CmdGlobObserver::observe(map<string,Group3D*> g3D,map<string,Group2D*>,map<
 				HOrientedPoint3D* rh = *sit;		
 				if(rh->getHistoric().size() < 3 || rh->getLastTimestamp() != _timestamp)
 					continue;
-			/*	if(oneHandRecognition(rh))
-					break;*/
+				/*	if(oneHandRecognition(rh))
+				break;*/
 				for(map<string,Group3D*>::iterator sgit = git; sgit != g3D.end(); sgit++)		
 				{		
 					if(sgit->first.compare(git->first) == 0)		
