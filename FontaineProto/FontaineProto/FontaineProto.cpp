@@ -29,6 +29,7 @@ using namespace lg;
 
 bool sortie = false, debugWindow = false, controlPosition = false;
 int fountainHeight, bodySize, gestureDelay, savedDelay, aimantationDelayForGesture, savedDelayAimantation, pastUsers = -1, removeNbFrames = 10;
+float handsPerimeter;
 lo_address client;
 string ipAdress, port, removeBackgroudDirectory;
 
@@ -155,6 +156,10 @@ bool setup()
 		getline (myfile,line);
 		removeBackgroudDirectory = line;
 
+		getline (myfile,line);
+		getline (myfile,line);
+		handsPerimeter = atof(line.c_str());
+
 		myfile.close();
 	}
 	else 
@@ -188,6 +193,7 @@ int main(int argc, char* argv[])
 	gt->setFountainHeight(fountainHeight);
 	gt->setRemoveNBFrames(removeNbFrames);
 	gt->setRemoveBackgroundDirectory(removeBackgroudDirectory);
+	gt->setHandsPerimeter(handsPerimeter);
 	if(myEnv->registerNode(gt))
 		printf("Register DepthHandsFromSkyGenerator OK.\n");
 	else
@@ -258,7 +264,6 @@ int main(int argc, char* argv[])
 		savedDelayAimantation = hasDoneAimant ? myEnv->getTime() : savedDelayAimantation + aimantationDelayForGesture < myEnv->getTime() ? 0 : savedDelayAimantation;
 		if(savedDelay + gestureDelay < myEnv->getTime() && !hasDoneAimant && savedDelayAimantation + aimantationDelayForGesture < myEnv->getTime())
 		{
-			cout << controlPosition << endl;
 			if(!hasDoneGesture || controlPosition) hasDoneGesture = globalCommand(globCmd);
 			if(!hasDoneGesture) hasDoneGesture = gestureRecognition(odr);
 			if (!controlPosition)

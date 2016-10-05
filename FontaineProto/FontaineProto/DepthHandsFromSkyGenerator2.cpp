@@ -376,7 +376,7 @@ void DepthHandsFromSkyGenerator2::convertDepthHandsToCameraHands()
 		Point3D point(cameraPoint.X, cameraPoint.Y, cameraPoint.Z);
 
 		// ensure hand is close to the foutain origin
-		if(point.distanceTo(Point3D(0.0, 0.0, hauteurCamera/1000)) < 0.8) //meters
+		if(point.distanceTo(Point3D(0.0, 0.0, hauteurCamera/1000)) < _handsPerimeter) //meters
 		{
 			currentHands.push_back(Point3D(cameraPoint.X,cameraPoint.Y,cameraPoint.Z));
 		}
