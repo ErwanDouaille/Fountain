@@ -55,7 +55,7 @@ bool globalCommand(CmdGlobObserver* cmd)
 	string name = "/cmdGlob/" + cmd->getCmdName();
 	if(debugWindow)
 		cout << name << "\t" << cmd->getSpeed() << "\t" << cmd->getAmplitude() << endl;
-	controlPosition = name.compare("ctrlPos") == 0 ? true : false;
+	controlPosition = name.compare("/cmdGlob/ctrlPos") == 0 ? true : false;
 	if(lo_send(client, name.c_str(), "fffff", cmd->getSpeed(), cmd->getAmplitude(), cmd->getDirection().getX(), cmd->getDirection().getY(), cmd->getDirection().getZ()) == -1) // controlled blaster and hauteur
 		printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
 	return true;
@@ -258,9 +258,13 @@ int main(int argc, char* argv[])
 		savedDelayAimantation = hasDoneAimant ? myEnv->getTime() : savedDelayAimantation + aimantationDelayForGesture < myEnv->getTime() ? 0 : savedDelayAimantation;
 		if(savedDelay + gestureDelay < myEnv->getTime() && !hasDoneAimant && savedDelayAimantation + aimantationDelayForGesture < myEnv->getTime())
 		{
+			cout << controlPosition << endl;
 			if(!hasDoneGesture || controlPosition) hasDoneGesture = globalCommand(globCmd);
 			if(!hasDoneGesture) hasDoneGesture = gestureRecognition(odr);
-			savedDelay = hasDoneGesture ? myEnv->getTime() : savedDelay + gestureDelay < myEnv->getTime() ? 0 : savedDelay;
+			if (!controlPosition)
+				savedDelay = hasDoneGesture ? myEnv->getTime() : savedDelay + gestureDelay < myEnv->getTime() ? 0 : savedDelay;
+			else
+				savedDelay = 0;
 		}
 		sendNbUsers(gt);
 		Sleep(1);
