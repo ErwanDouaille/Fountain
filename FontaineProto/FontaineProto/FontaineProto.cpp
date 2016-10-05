@@ -54,9 +54,9 @@ bool globalCommand(CmdGlobObserver* cmd)
 	if(cmd->getCmdName().compare("") == 0)
 		return false;
 	string name = "/cmdGlob/" + cmd->getCmdName();
-	/*if(debugWindow)
+	if(debugWindow)
 		cout << name << "\t" << cmd->getSpeed() << "\t" << cmd->getAmplitude() << endl;
-	*/controlPosition = name.compare("/cmdGlob/ctrlPos") == 0 ? true : false;
+	controlPosition = name.compare("/cmdGlob/ctrlPos") == 0 ? true : false;
 	if(lo_send(client, name.c_str(), "fffff", cmd->getSpeed(), cmd->getAmplitude(), cmd->getDirection().getX(), cmd->getDirection().getY(), cmd->getDirection().getZ()) == -1) // controlled blaster and hauteur
 		printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
 	return true;
@@ -80,16 +80,16 @@ bool gestureRecognition( OneDollarRecognizerObserver* odr)
 		hasDoneGesture = true;
 		if(highestGroup.compare("Circle") == 0)
 		{
-			/*if(debugWindow)
+			if(debugWindow)
 				cout << "Circle " << endl;
-			*/if (lo_send(client, "/cmdAnim/tourne", "i" , 1) == -1) // controlled blaster and hauteur
+			if (lo_send(client, "/cmdAnim/tourne", "i" , 1) == -1) // controlled blaster and hauteur
 				printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
 		}
 		if(highestGroup.compare("Circle_Inv") == 0)
 		{			
-			/*if(debugWindow)
+			if(debugWindow)
 				cout << "Circle Inv " << endl;
-			*/if (lo_send(client, "/cmdAnim/tourne", "i" , -1) == -1) // controlled blaster and hauteur
+			if (lo_send(client, "/cmdAnim/tourne", "i" , -1) == -1) // controlled blaster and hauteur
 				printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
 		}
 	}
@@ -104,9 +104,9 @@ bool blasterControl( BlasterObserver* bobs)
 	for(map<string,float>::iterator pit = probas.begin();pit != probas.end();pit++){
 		if(pit->second > 0.8f){
 			aimantControl = true;
-			/*if(debugWindow) 
+			if(debugWindow) 
 				cout << "aimant " << bobs->getJet(pit->first) << " " << bobs->getHauteur(pit->first) << endl;
-			*/if (lo_send(client, "/aimant", "if" ,bobs->getJet(pit->first) , bobs->getHauteur(pit->first)) == -1) // controlled blaster and hauteur
+			if (lo_send(client, "/aimant", "if" ,bobs->getJet(pit->first) , bobs->getHauteur(pit->first)) == -1) // controlled blaster and hauteur
 				printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
 		}
 	}
