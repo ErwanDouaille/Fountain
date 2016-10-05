@@ -83,7 +83,7 @@ bool OpenCVDrawObserver::observe(map<string,Group3D*> g3D,map<string,Group2D*>,m
 			}
 		}
 	}
-	
+
 	// Display
 	cv::imshow("openCVDrawObserver", frame);
 	cv::waitKey(1);	

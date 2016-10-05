@@ -211,7 +211,6 @@ bool DepthHandsFromSkyGenerator2::stop()
 
 void DepthHandsFromSkyGenerator2::findHands()
 {
-	Point2D origin(width/2.0, height/2.0);
 	for( int i = 0; i< contours.size(); i++ )
 	{
 		vector<Point> contourPoints;
@@ -222,6 +221,7 @@ void DepthHandsFromSkyGenerator2::findHands()
 			{
 				vector<Point> handsTemp;
 				RotatedRect r = ellipses[e];
+				Point2D origin(r.center.x, r.center.y);
 				int nbP = 0, index = -1;
 				for(int c = 0; c < contourPoints.size();c++)
 				{
@@ -232,23 +232,26 @@ void DepthHandsFromSkyGenerator2::findHands()
 					}
 					else 
 					{
-					
+
 						if(index == -1)
+						{
 							index = c;
+							handsTemp.push_back(contourPoints[c]);
+						}
 						// remove "elbow hands"
 						else 
 						{
 							Point2D past(contourPoints[index].x, contourPoints[index].y), 
 								current(contourPoints[c].x, contourPoints[c].y);
-							if (past.distanceTo(origin) > current.distanceTo(origin))
+							if (past.distanceTo(origin) < current.distanceTo(origin))
 							{
 								auto it = std::find(handsTemp.begin(), handsTemp.end(), contourPoints[index]);
 								if(it != handsTemp.end())
 									handsTemp.erase(it);	
 								index = c;
+								handsTemp.push_back(contourPoints[c]);
 							}
 						}
-						handsTemp.push_back(contourPoints[c]);
 					}
 				} 
 
@@ -279,7 +282,7 @@ void DepthHandsFromSkyGenerator2::findHands()
 					bestPoint = p;
 				}
 			}
-			if (distanceBestPoint > 90)
+			if (distanceBestPoint > 90)// remove water wrong positive 90 = radius arround fountain origin, you can draw a circle to represent it
 				hands.push_back(bestPoint);
 		}
 	}
@@ -372,7 +375,7 @@ void DepthHandsFromSkyGenerator2::convertDepthHandsToCameraHands()
 		depthPoint.X = static_cast<float>(xCpt); 
 		depthPoint.Y = static_cast<float>(yCpt); 
 		pCoordinateMapper->MapDepthPointToCameraSpace(depthPoint,dCpt,&cameraPoint);
-		
+
 		Point3D point(cameraPoint.X, cameraPoint.Y, cameraPoint.Z);
 
 		// ensure hand is close to the foutain origin
