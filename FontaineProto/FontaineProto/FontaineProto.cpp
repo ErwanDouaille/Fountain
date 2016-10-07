@@ -124,6 +124,7 @@ bool gestureRecognition( OneDollarRecognizerObserver* odr)
 				printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
 		}
 	}
+	controlPosition = false;
 	return hasDoneGesture;
 }
 
@@ -157,6 +158,7 @@ bool blasterControl( BlasterObserver* bobs)
 		hasDoneAimant = true;
 		aimantTimer();
 	}
+	controlPosition = hasDoneAimant ? false : controlPosition;
 	return hasDoneAimant;
 }
 
