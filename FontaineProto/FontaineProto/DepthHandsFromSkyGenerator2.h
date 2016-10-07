@@ -117,7 +117,7 @@ public:
 	void setFountainHeight(int value) {fountainHeight = value;}
 	void setBodySize(int value) {bodySize = value;}
 	void setRemoveNBFrames(int value) {_removeNBFrames = value;}
-	void setHandsPerimeter(int value) {_handsPerimeter = value;}
+	void setHandsPerimeter(float value) {_handsPerimeter = value;}
 	void setRemoveBackgroundDirectory(string value) {_removeBackgroundDirectory = value;}
 	void initRemoveBackground();
 

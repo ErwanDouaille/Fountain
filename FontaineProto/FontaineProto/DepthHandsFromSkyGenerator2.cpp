@@ -232,7 +232,6 @@ void DepthHandsFromSkyGenerator2::findHands()
 					}
 					else 
 					{
-
 						if(index == -1)
 						{
 							index = c;

@@ -13,6 +13,7 @@
 #include <math.h>  
 #include <fstream>
 #include <string>
+#include <stdlib.h>
 #include <vector>
 
 #include "LgEnvironment.h"
@@ -28,7 +29,7 @@ using namespace std;
 using namespace lg;
 
 bool sortie = false, debugWindow = false, controlPosition = false;
-int fountainHeight, bodySize, gestureDelay, savedDelay, aimantationDelayForGesture, savedDelayAimantation, pastUsers = -1, removeNbFrames = 10;
+int fountainHeight, bodySize, gestureDelay, savedDelay, aimantationDelayForGesture, savedDelayAimantation, pastUsers = -1, removeNbFrames = 10, savedDelayBeforeAimantation, delayBeforeAimantation;
 float handsPerimeter;
 lo_address client;
 string ipAdress, port, removeBackgroudDirectory;
@@ -75,7 +76,7 @@ bool gestureRecognition( OneDollarRecognizerObserver* odr)
 			highestGroup = pit->first;
 		}
 	}
-	if(highest>0.6 )
+	if(highest>0.7 )
 	{
 		hasDoneGesture = true;
 		if(highestGroup.compare("Circle") == 0)
@@ -159,6 +160,10 @@ bool setup()
 		getline (myfile,line);
 		getline (myfile,line);
 		handsPerimeter = atof(line.c_str());
+
+		getline (myfile,line);
+		getline (myfile,line);
+		delayBeforeAimantation = atoi(line.c_str());
 
 		myfile.close();
 	}
