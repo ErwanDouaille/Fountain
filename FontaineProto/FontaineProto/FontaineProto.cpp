@@ -28,15 +28,46 @@
 using namespace std;
 using namespace lg;
 
-bool sortie = false, debugWindow = false, controlPosition = false;
-int fountainHeight, bodySize, gestureDelay, savedDelay, aimantationDelayForGesture, savedDelayAimantation, pastUsers = -1, removeNbFrames = 10, savedDelayBeforeAimantation, delayBeforeAimantation;
+bool sortie = false, debugWindow = false;
+bool hasDoneAimant = false, hasDoneGesture = false, controlPosition = false;
+int fountainHeight, bodySize, pastUsers = -1, removeNbFrames = 10;
+
+int gestureDelay, savedGestureTime;
+int aimantationToGestureDelay, savedAimantationToGestureTime;
+int beforeAimantationDelay, savedBeforeAimantationTime;
+
+//, aimantationDelayForGesture, savedDelayAimantation, savedDelayBeforeAimantation, delayBeforeAimantation;
 float handsPerimeter;
 lo_address client;
 string ipAdress, port, removeBackgroudDirectory;
+Environment* myEnv;
 
 void killHandler (int param)
 {
 	sortie = true;
+}
+
+bool canDoAimant()
+{
+	return savedBeforeAimantationTime + beforeAimantationDelay <  myEnv->getTime();
+}
+
+bool canDoGesture()
+{
+	return (savedGestureTime + gestureDelay < myEnv->getTime() &&
+		savedAimantationToGestureTime + aimantationToGestureDelay < myEnv->getTime() &&
+		!hasDoneAimant) || 
+		controlPosition;
+}
+
+void gestureTimer()
+{
+	savedGestureTime = hasDoneGesture ? myEnv->getTime() : savedGestureTime + gestureDelay < myEnv->getTime() ? 0 : savedGestureTime;
+}
+
+void aimantTimer()
+{
+	savedBeforeAimantationTime = myEnv->getTime();
 }
 
 void sendNbUsers(DepthHandsFromSkyGenerator2* gt)
@@ -65,7 +96,6 @@ bool globalCommand(CmdGlobObserver* cmd)
 
 bool gestureRecognition( OneDollarRecognizerObserver* odr)
 {
-	bool hasDoneGesture = false;
 	float highest = -1.0f;
 	string highestGroup = "";
 	map<string,float> probas;
@@ -94,25 +124,40 @@ bool gestureRecognition( OneDollarRecognizerObserver* odr)
 				printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
 		}
 	}
-	controlPosition = false;
 	return hasDoneGesture;
 }
 
 bool blasterControl( BlasterObserver* bobs)
 {
-	bool aimantControl = false;
+	//hasDoneAimant = false;
+	bool doingAimant = false;
+	bool canReboot = true;
 	map<string,float> probas = bobs->getProbabilities();
 	for(map<string,float>::iterator pit = probas.begin();pit != probas.end();pit++){
 		if(pit->second > 0.8f){
-			aimantControl = true;
-			if(debugWindow) 
-				cout << "aimant " << bobs->getJet(pit->first) << " " << bobs->getHauteur(pit->first) << endl;
-			if (lo_send(client, "/aimant", "if" ,bobs->getJet(pit->first) , bobs->getHauteur(pit->first)) == -1) // controlled blaster and hauteur
-				printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
+			canReboot = false;
+			if(hasDoneAimant)
+			{
+				if(debugWindow) 
+					cout << "aimant " << bobs->getJet(pit->first) << " " << bobs->getHauteur(pit->first) << endl;
+				if (lo_send(client, "/aimant", "if" ,bobs->getJet(pit->first) , bobs->getHauteur(pit->first)) == -1) // controlled blaster and hauteur
+					printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
+			}
+			else 
+			{
+				doingAimant = true;
+			}
 		}
 	}
-	controlPosition = aimantControl ? false : controlPosition;
-	return aimantControl;
+	if (canReboot)
+		hasDoneAimant = false;
+
+	if (doingAimant)
+	{
+		hasDoneAimant = true;
+		aimantTimer();
+	}
+	return hasDoneAimant;
 }
 
 bool setup()
@@ -147,7 +192,7 @@ bool setup()
 
 		getline (myfile,line);
 		getline (myfile,line);
-		aimantationDelayForGesture = atoi(line.c_str());
+		aimantationToGestureDelay = atoi(line.c_str());
 
 		getline (myfile,line);
 		getline (myfile,line);
@@ -163,7 +208,7 @@ bool setup()
 
 		getline (myfile,line);
 		getline (myfile,line);
-		delayBeforeAimantation = atoi(line.c_str());
+		beforeAimantationDelay = atoi(line.c_str());
 
 		myfile.close();
 	}
@@ -186,10 +231,13 @@ int main(int argc, char* argv[])
 		return 2;
 	}
 
-	Environment* myEnv = new Environment();
+	myEnv = new Environment();
 	myEnv->enableDataCopy(false);
 	myEnv->setHistoricLength(10);
-	savedDelay = myEnv->getTime();
+
+	savedGestureTime = myEnv->getTime();
+	savedBeforeAimantationTime = myEnv->getTime();
+	savedAimantationToGestureTime = myEnv->getTime();
 
 	/******************************************************************* GENERATOR
 	******************************************************************************/
@@ -263,7 +311,25 @@ int main(int argc, char* argv[])
 	/***************************************************************** UPDATE LOOP
 	******************************************************************************/
 	while(!sortie){		
-		bool hasDoneAimant = false, hasDoneGesture = false;
+		myEnv->update();
+
+		if(canDoAimant())	
+		{
+			blasterControl(bobs);
+		}
+		
+		if(canDoGesture())
+		{
+			globalCommand(globCmd);
+			if(!hasDoneGesture)
+				gestureRecognition(odr);
+			gestureTimer();
+		}
+
+		sendNbUsers(gt);
+		Sleep(1);
+
+	/*	bool hasDoneAimant = false, hasDoneGesture = false;
 		myEnv->update();
 		hasDoneAimant = blasterControl(bobs);
 		savedDelayAimantation = hasDoneAimant ? myEnv->getTime() : savedDelayAimantation + aimantationDelayForGesture < myEnv->getTime() ? 0 : savedDelayAimantation;
@@ -277,7 +343,7 @@ int main(int argc, char* argv[])
 				savedDelay = 0;
 		}
 		sendNbUsers(gt);
-		Sleep(1);
+		Sleep(1);*/
 	}
 
 	myEnv->stop();
