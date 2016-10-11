@@ -138,9 +138,6 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	int threshold = 20;
 	float angleDifference = angleBetweenHands(rh, srh);
 	float angleMouvementDiff = angleMouvement(rh, srh);
-	
-	float originDistance = getLastPosition(rh).distanceTo(Point3D(0.0, 0.0, 0.0));
-	float soriginDistance = getLastPosition(srh).distanceTo(Point3D(0.0, 0.0, 0.0));
 
 	if( speed.getZ() < -30 && sspeed.getZ() < -30)
 	{
@@ -176,14 +173,14 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	setDirection(dir);
 	controlPosIteration = 0;
 	}*/
-	else if (angleDifference > 0.4)
+	else if (angleDifference > 0.5 && distance > 200 && sdistance > 200)
 	{
 		setCmdName("ecarte");
 		setSpeed(getAngleFromHandsToCenter(rh, srh));
 		setAmplitude((distance + sdistance) /2.0);
 		controlPosIteration = 0;
 	}
-	else if (angleDifference < -0.4)
+	else if (angleDifference < -0.5 && distance > 200 && sdistance > 200)
 	{
 		setCmdName("reserre");
 		setSpeed(getAngleFromHandsToCenter(rh, srh));

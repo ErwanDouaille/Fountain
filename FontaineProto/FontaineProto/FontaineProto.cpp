@@ -87,6 +87,7 @@ bool globalCommand(CmdGlobObserver* cmd)
 	if(cmd->getCmdName().compare("") == 0)
 	{
 		hasDoneGesture = false;
+		controlPosition = false;
 		return false;
 	}
 	string name = "/cmdGlob/" + cmd->getCmdName();
@@ -101,6 +102,7 @@ bool globalCommand(CmdGlobObserver* cmd)
 
 bool gestureRecognition( OneDollarRecognizerObserver* odr)
 {
+	bool doingGesture = false;
 	float highest = -1.0f;
 	string highestGroup = "";
 	map<string,float> probas;
@@ -113,7 +115,7 @@ bool gestureRecognition( OneDollarRecognizerObserver* odr)
 	}
 	if(highest>0.7 )
 	{
-		hasDoneGesture = true;
+		doingGesture = true;
 		if(highestGroup.compare("Circle") == 0)
 		{
 			if(debugWindow)
@@ -129,6 +131,7 @@ bool gestureRecognition( OneDollarRecognizerObserver* odr)
 				printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
 		}
 	}
+	hasDoneGesture = doingGesture ? true : false;
 	controlPosition = false;
 	return hasDoneGesture;
 }
@@ -164,6 +167,7 @@ bool blasterControl( BlasterObserver* bobs)
 		aimantTimer();
 	}
 	controlPosition = hasDoneAimant ? false : controlPosition;
+	hasDoneGesture = false;
 	return hasDoneAimant;
 }
 
@@ -323,7 +327,6 @@ int main(int argc, char* argv[])
 	******************************************************************************/
 	while(!sortie){		
 		myEnv->update();
-
 		if(canDoAimant())	
 		{
 			blasterControl(bobs);
