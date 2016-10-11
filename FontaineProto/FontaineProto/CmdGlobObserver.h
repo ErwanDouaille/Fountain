@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LgObserver.h"
+#include <cmath>
 
 using namespace lg;
 

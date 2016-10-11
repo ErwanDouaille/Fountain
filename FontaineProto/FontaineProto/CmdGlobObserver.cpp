@@ -78,9 +78,24 @@ float angleBetweenHands(HOrientedPoint3D* h, HOrientedPoint3D* rh)
 	Point3D lasts = getLastPosition(rh);
 	Point3D firsts = getFirstPosition(rh);
 
+	float dot = (last.getX() * lasts.getX()) + (last.getY() * lasts.getY()) + (last.getZ() * lasts.getZ());
+	float len1 = sqrtf((last.getX() * last.getX()) + (last.getY() * last.getY()) + (last.getZ() * last.getZ()));
+	float len2 = sqrtf((lasts.getX() * lasts.getX()) + (lasts.getY() * lasts.getY()) + (lasts.getZ() * lasts.getZ()));
+	float theta1 = acosf(dot / (len1 * len2));
+
+	dot = (first.getX() * firsts.getX()) + (first.getY() * firsts.getY()) + (first.getZ() * firsts.getZ());
+	len1 = sqrtf((first.getX() * first.getX()) + (first.getY() * first.getY()) + (first.getZ() * first.getZ()));
+	len2 = sqrtf((firsts.getX() * firsts.getX()) + (firsts.getY() * firsts.getY()) + (firsts.getZ() * firsts.getZ()));
+	float theta2 = acosf(dot / (len1 * len2));
+
+	return theta2 - theta1;
+	/*
 	float before = atan2(first.getY(), first.getX()) - atan2(firsts.getY(), firsts.getX());
 	float after = atan2(last.getY(), last.getX()) - atan2(lasts.getY(), lasts.getX());
 	return after - before;
+	*/
+
+
 }
 
 float angleMouvement(HOrientedPoint3D* h, HOrientedPoint3D* rh)
@@ -89,10 +104,13 @@ float angleMouvement(HOrientedPoint3D* h, HOrientedPoint3D* rh)
 	Point3D first = getFirstPosition(h);
 	Point3D lasts = getLastPosition(rh);
 	Point3D firsts = getFirstPosition(rh);
+	Point3D midLast = Point3D( (last.getX() + lasts.getX())/2.0, (last.getY() + lasts.getY())/2.0, (last.getZ() + lasts.getZ())/2.0 );
+	Point3D midFirst = Point3D( (first.getX() + firsts.getX())/2.0, (first.getY() + firsts.getY())/2.0, (first.getZ() + firsts.getZ())/2.0 );
 
-	float before = atan2((first.getY() + firsts.getY()) / 2.0, (first.getX() + firsts.getX()) / 2.0);
-	float after = atan2((last.getY() + lasts.getY()) / 2.0, (last.getX() + lasts.getX()) / 2.0);
-	return after - before;
+	float dot = (midLast.getX() * midFirst.getX()) + (midLast.getY() * midFirst.getY()) + (midLast.getZ() * midFirst.getZ());
+	float len1 = sqrtf((midLast.getX() * midLast.getX()) + (midLast.getY() * midLast.getY()) + (midLast.getZ() * midLast.getZ()));
+	float len2 = sqrtf((midFirst.getX() * midFirst.getX()) + (midFirst.getY() * midFirst.getY()) + (midFirst.getZ() * midFirst.getZ()));
+	return acosf(dot / (len1 * len2));
 }
 
 bool gotSimilarDistanceFromOrigin(HOrientedPoint3D* rh, HOrientedPoint3D* srh, int threshold)
@@ -135,10 +153,10 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	float sdistance = historicDistance(srh);
 	Point3D speed = historicSpeed(rh);
 	Point3D sspeed = historicSpeed(srh);
-	int threshold = 20;
+	int thresholdControlPosition = 40;
 	float angleDifference = angleBetweenHands(rh, srh);
 	float angleMouvementDiff = angleMouvement(rh, srh);
-
+	cout << angleDifference << "\t" << angleMouvementDiff << endl;
 	if( speed.getZ() < -30 && sspeed.getZ() < -30)
 	{
 		setCmdName("baisse");
@@ -173,24 +191,23 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	setDirection(dir);
 	controlPosIteration = 0;
 	}*/
-	else if (angleDifference > 0.5 && distance > 200 && sdistance > 200)
-	{
-		setCmdName("ecarte");
-		setSpeed(getAngleFromHandsToCenter(rh, srh));
-		setAmplitude((distance + sdistance) /2.0);
-		controlPosIteration = 0;
-	}
-	else if (angleDifference < -0.5 && distance > 200 && sdistance > 200)
+	else if (angleDifference > 0.2)
 	{
 		setCmdName("reserre");
 		setSpeed(getAngleFromHandsToCenter(rh, srh));
 		setAmplitude((distance + sdistance) /2.0);
 		controlPosIteration = 0;
 	}
-	else if (angleDifference < 0.1 && angleDifference > -0.1  &&
-		angleMouvementDiff < 0.1  && angleMouvementDiff > -0.1 && 
-		gotSimilarHeight(rh, srh, 40) &&
-		controlPosIteration > 5)
+	else if (angleDifference < -0.2)
+	{
+		setCmdName("ecarte");
+		setSpeed(getAngleFromHandsToCenter(rh, srh));
+		setAmplitude((distance + sdistance) /2.0);
+		controlPosIteration = 0;
+	}
+	else if (angleDifference < 0.01 && angleDifference > -0.01  &&
+		gotSimilarHeight(rh, srh, thresholdControlPosition) &&
+		controlPosIteration > 10)
 	{
 		Point3D last = getLastPosition(rh);
 		Point3D lasts = getLastPosition(srh);
@@ -201,9 +218,8 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		controlPosIteration++;
 		controlPosLastTimestamp = _timestamp;
 	}
-	else if (angleDifference < 0.1 && angleDifference > -0.1  &&
-		angleMouvementDiff < 0.1  && angleMouvementDiff > -0.1 &&
-		gotSimilarHeight(rh, srh, 40))
+	else if (angleDifference < 0.01 && angleDifference > -0.01  &&
+		gotSimilarHeight(rh, srh, thresholdControlPosition))
 	{
 		controlPosIteration++;
 		controlPosLastTimestamp = _timestamp;
