@@ -68,6 +68,7 @@ void gestureTimer()
 void aimantTimer()
 {
 	savedBeforeAimantationTime = myEnv->getTime();
+	savedAimantationToGestureTime = myEnv->getTime();
 }
 
 void sendNbUsers(DepthHandsFromSkyGenerator2* gt)
