@@ -30,7 +30,7 @@ using namespace lg;
 
 bool sortie = false, debugWindow = false;
 bool hasDoneAimant = false, hasDoneGesture = false, controlPosition = false;
-int fountainHeight, bodySize, pastUsers = -1, removeNbFrames = 10;
+int fountainHeight, fountainHeightCutOff, bodySize, pastUsers = -1, removeNbFrames = 10;
 
 __int64 gestureDelay, savedGestureTime;
 __int64 aimantationToGestureDelay, savedAimantationToGestureTime;
@@ -182,7 +182,7 @@ bool setup()
 
 		getline (myfile,line);
 		getline (myfile,line);
-		fountainHeight = atoi(line.c_str());
+		fountainHeightCutOff = atoi(line.c_str());
 
 		getline (myfile,line);
 		getline (myfile,line);
@@ -216,6 +216,10 @@ bool setup()
 		getline (myfile,line);
 		beforeAimantationDelay = atoi(line.c_str());
 
+		getline (myfile,line);
+		getline (myfile,line);
+		fountainHeight = atoi(line.c_str());
+
 		myfile.close();
 	}
 	else 
@@ -239,7 +243,7 @@ int main(int argc, char* argv[])
 
 	myEnv = new Environment();
 	myEnv->enableDataCopy(false);
-	myEnv->setHistoricLength(10);
+	myEnv->setHistoricLength(3);
 
 	savedGestureTime = myEnv->getTime();
 	savedBeforeAimantationTime = myEnv->getTime();
@@ -249,7 +253,7 @@ int main(int argc, char* argv[])
 	******************************************************************************/
 	DepthHandsFromSkyGenerator2* gt = new DepthHandsFromSkyGenerator2("DepthHandsFromSkyGenerator"); 
 	gt->setBodySize(bodySize);
-	gt->setFountainHeight(fountainHeight);
+	gt->setFountainHeight(fountainHeightCutOff);
 	gt->setRemoveNBFrames(removeNbFrames);
 	gt->setRemoveBackgroundDirectory(removeBackgroudDirectory);
 	gt->setHandsPerimeter(handsPerimeter);
@@ -273,7 +277,6 @@ int main(int argc, char* argv[])
 	******************************************************************************/
 	BlasterObserver* bobs = new BlasterObserver(); 
 	bobs->onlyObserveGroupType(fp->getGeneratedGroupType());
-	bobs->setFountainHeight(fountainHeight);
 	if(myEnv->registerNode(bobs))
 		printf("Register BlasterObserver OK.\n");
 	else
@@ -286,7 +289,7 @@ int main(int argc, char* argv[])
 		printf("Register CmdGlobObserver OK.\n");
 	else
 		printf("%s.\n",myEnv->getLastError().c_str());
-	
+
 	OneDollarRecognizerObserver* odr = new OneDollarRecognizerObserver("OneDollarRecognizerObserver");
 	odr->onlyObserveGroupType(fp->getGeneratedGroupType());
 	if(myEnv->registerNode(odr))
@@ -312,19 +315,19 @@ int main(int argc, char* argv[])
 		printf("Start environment OK.\n");
 	else
 		printf("%s.\n",myEnv->getLastError().c_str());
-		
+
 	client = lo_address_new(ipAdress.c_str(), port.c_str());
 
 	/***************************************************************** UPDATE LOOP
 	******************************************************************************/
 	while(!sortie){		
 		myEnv->update();
-		
+
 		if(canDoAimant())	
 		{
 			blasterControl(bobs);
 		}
-		
+
 		if(canDoGesture())
 		{
 			globalCommand(globCmd);

@@ -1,5 +1,5 @@
 // IP ADDRESS
-192.168.1.52
+127.0.0.1
 // PORT, int value
 9998
 // FOUNTAIN HEIGHT CUTOFF, int value (was 100)
@@ -20,3 +20,5 @@ background.jpg
 1.0
 // AIMANTATION START DELAY
 200
+// FOUNATIN HEIGHT
+1735

@@ -55,9 +55,6 @@ bool BlasterObserver::start()
 		exit(-1);
 	}
 
-
-
-
 	return true;
 }
 
@@ -85,7 +82,7 @@ bool BlasterObserver::observe(map<string,Group3D*> g3D,map<string,Group2D*>,map<
 			for(set<HOrientedPoint3D*> ::iterator sit = rhs.begin();sit != rhs.end();sit++)
 			{
 				HOrientedPoint3D* rh = *sit;
-				if(rh->getHistoric().size() < 7 )
+				if(rh->getHistoric().size() < 3 )
 					continue;
 
 				Point3D pos = rh->getLast()->getPosition();

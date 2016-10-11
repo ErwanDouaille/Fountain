@@ -80,9 +80,6 @@ float angleBetweenHands(HOrientedPoint3D* h, HOrientedPoint3D* rh)
 
 	float before = atan2(first.getY(), first.getX()) - atan2(firsts.getY(), firsts.getX());
 	float after = atan2(last.getY(), last.getX()) - atan2(lasts.getY(), lasts.getX());
-
-	before = before < 0 ? before += 2 * 3.14 : before;
-	after = after < 0 ? after += 2 * 3.14 : after;
 	return after - before;
 }
 
@@ -142,13 +139,9 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	float angleDifference = angleBetweenHands(rh, srh);
 	float angleMouvementDiff = angleMouvement(rh, srh);
 	
-	float originDistance = getFirstPosition(rh).distanceTo(Point3D(0.0, 0.0, 0.0));
-	float soriginDistance = getFirstPosition(srh).distanceTo(Point3D(0.0, 0.0, 0.0));
+	float originDistance = getLastPosition(rh).distanceTo(Point3D(0.0, 0.0, 0.0));
+	float soriginDistance = getLastPosition(srh).distanceTo(Point3D(0.0, 0.0, 0.0));
 
-	updateDebug(angleDifference, angleMouvementDiff, speed.getZ(), sspeed.getZ());
-	
-	
-	//cout << distance << "    " << sdistance << endl;
 	if( speed.getZ() < -30 && sspeed.getZ() < -30)
 	{
 		setCmdName("baisse");
@@ -183,40 +176,37 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	setDirection(dir);
 	controlPosIteration = 0;
 	}*/
-	else if (angleDifference > 0.6 &&
-		distance > 200 && sdistance > 200 &&
-		originDistance + 30 > soriginDistance && originDistance - 30 < soriginDistance)
+	else if (angleDifference > 0.4)
 	{
 		setCmdName("ecarte");
 		setSpeed(getAngleFromHandsToCenter(rh, srh));
 		setAmplitude((distance + sdistance) /2.0);
 		controlPosIteration = 0;
 	}
-	else if (angleDifference < -0.6  && 
-		distance > 200 && sdistance > 200 &&
-		originDistance + 30 > soriginDistance && originDistance - 30 < soriginDistance)
+	else if (angleDifference < -0.4)
 	{
 		setCmdName("reserre");
 		setSpeed(getAngleFromHandsToCenter(rh, srh));
 		setAmplitude((distance + sdistance) /2.0);
 		controlPosIteration = 0;
 	}
-	else if (angleDifference < 0.01 && angleDifference > -0.01  &&
-		angleMouvementDiff < 0.01  && angleMouvementDiff > -0.01 && 
+	else if (angleDifference < 0.1 && angleDifference > -0.1  &&
+		angleMouvementDiff < 0.1  && angleMouvementDiff > -0.1 && 
 		gotSimilarHeight(rh, srh, 40) &&
 		controlPosIteration > 5)
 	{
 		Point3D last = getLastPosition(rh);
 		Point3D lasts = getLastPosition(srh);
 		setCmdName("ctrlPos");
-		setSpeed(_hauteurCamera-((last.getZ() + lasts.getZ()) / 2.0));
+								
+		setSpeed(_hauteurCamera - ((last.getZ() + lasts.getZ())/2.0));
 		setAmplitude(0.0);
 		controlPosIteration++;
 		controlPosLastTimestamp = _timestamp;
 	}
-	else if (angleDifference < 0.2 && angleDifference > -0.2  &&
-		angleMouvementDiff < 0.2  && angleMouvementDiff > -0.2 && 
-		gotSimilarHeight(rh, srh, 50))
+	else if (angleDifference < 0.1 && angleDifference > -0.1  &&
+		angleMouvementDiff < 0.1  && angleMouvementDiff > -0.1 &&
+		gotSimilarHeight(rh, srh, 40))
 	{
 		controlPosIteration++;
 		controlPosLastTimestamp = _timestamp;

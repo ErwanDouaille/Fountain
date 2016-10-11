@@ -27,8 +27,6 @@ public:
 	bool start();
 	bool stop();
 	
-	float _a,_b,_c,_d;
-
 	bool observe(map<string,Group3D*>,map<string,Group2D*>,map<string,Group1D*>, map<string,GroupSwitch*>);
 
 	void setSpeed(float value) {_speed = value;}
@@ -36,8 +34,6 @@ public:
 	void setCmdName(string value) {_cmdName = value;}
 	void setDirection(Point3D value) {_direction = value;}
 	void setHauteurCamera(int value) {_hauteurCamera = value;}
-
-	void updateDebug(float a, float b, float c, float d) {_a=a;_b=b;_c=c;_d=d;}
 
 	float getSpeed() {return _speed;}
 	float getAmplitude() {return _amplitude;}
