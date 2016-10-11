@@ -5,7 +5,7 @@
 #define BIG_EROSION 50
 #define SMALL_EROSION 10
 #define HANDS_PIXELS_WIDTH 35
-#define MIN_NB_CONT 2
+#define MIN_NB_CONT 0
 #define APPROX_PREC 40
 #define HANDS_PROXIMITY 0
 #define MIN_BLOB_SIZE 3000

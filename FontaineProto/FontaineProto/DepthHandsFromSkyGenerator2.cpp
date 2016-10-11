@@ -322,12 +322,15 @@ void DepthHandsFromSkyGenerator2::findContoursAndEllipses()
 	cv::findContours( centers, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE );
 	for( int i = 0; i< contours.size(); i++ )
 		ellipses.push_back(minAreaRect(contours[i]));
-
+	
+	imshow("before", frame);
 	// détection forme des gens pour distinguer mains
-	// update : erodé seulement une fois ça suffit et on enlève la dilatation des 
-	cv::erode(frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(7, 7)) );
-	//cv::dilate( frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)) ); 
 
+	// update : erodé seulement une fois ça suffit et on enlève la dilatation des 
+	cv::erode(frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(12,12)) );  //
+	cv::dilate( frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(7, 7))); 
+	
+	imshow("after", frame);
 	//  contours
 	cv::findContours( frame, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
 
