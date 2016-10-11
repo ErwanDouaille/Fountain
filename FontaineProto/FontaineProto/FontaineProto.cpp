@@ -32,9 +32,9 @@ bool sortie = false, debugWindow = false;
 bool hasDoneAimant = false, hasDoneGesture = false, controlPosition = false;
 int fountainHeight, bodySize, pastUsers = -1, removeNbFrames = 10;
 
-int gestureDelay, savedGestureTime;
-int aimantationToGestureDelay, savedAimantationToGestureTime;
-int beforeAimantationDelay, savedBeforeAimantationTime;
+__int64 gestureDelay, savedGestureTime;
+__int64 aimantationToGestureDelay, savedAimantationToGestureTime;
+__int64 beforeAimantationDelay, savedBeforeAimantationTime;
 
 //, aimantationDelayForGesture, savedDelayAimantation, savedDelayBeforeAimantation, delayBeforeAimantation;
 float handsPerimeter;
@@ -84,14 +84,18 @@ void sendNbUsers(DepthHandsFromSkyGenerator2* gt)
 bool globalCommand(CmdGlobObserver* cmd)
 {
 	if(cmd->getCmdName().compare("") == 0)
+	{
+		hasDoneGesture = false;
 		return false;
+	}
 	string name = "/cmdGlob/" + cmd->getCmdName();
 	if(debugWindow)
 		cout << name << "\t" << cmd->getSpeed() << "\t" << cmd->getAmplitude() << endl;
 	controlPosition = name.compare("/cmdGlob/ctrlPos") == 0 ? true : false;
 	if(lo_send(client, name.c_str(), "fffff", cmd->getSpeed(), cmd->getAmplitude(), cmd->getDirection().getX(), cmd->getDirection().getY(), cmd->getDirection().getZ()) == -1) // controlled blaster and hauteur
 		printf("OSC error %d: %s\n", lo_address_errno(client), lo_address_errstr(client));
-	return true;
+	hasDoneGesture = true;
+	return hasDoneGesture;
 }
 
 bool gestureRecognition( OneDollarRecognizerObserver* odr)
@@ -277,6 +281,7 @@ int main(int argc, char* argv[])
 
 	CmdGlobObserver* globCmd = new CmdGlobObserver();
 	globCmd->onlyObserveGroupType(fp->getGeneratedGroupType());
+	globCmd->setHauteurCamera(fountainHeight);
 	if(myEnv->registerNode(globCmd))
 		printf("Register CmdGlobObserver OK.\n");
 	else
@@ -314,7 +319,7 @@ int main(int argc, char* argv[])
 	******************************************************************************/
 	while(!sortie){		
 		myEnv->update();
-
+		
 		if(canDoAimant())	
 		{
 			blasterControl(bobs);
@@ -327,25 +332,8 @@ int main(int argc, char* argv[])
 				gestureRecognition(odr);
 			gestureTimer();
 		}
-
 		sendNbUsers(gt);
 		Sleep(1);
-
-	/*	bool hasDoneAimant = false, hasDoneGesture = false;
-		myEnv->update();
-		hasDoneAimant = blasterControl(bobs);
-		savedDelayAimantation = hasDoneAimant ? myEnv->getTime() : savedDelayAimantation + aimantationDelayForGesture < myEnv->getTime() ? 0 : savedDelayAimantation;
-		if(savedDelay + gestureDelay < myEnv->getTime() && !hasDoneAimant && savedDelayAimantation + aimantationDelayForGesture < myEnv->getTime())
-		{
-			if(!hasDoneGesture || controlPosition) hasDoneGesture = globalCommand(globCmd);
-			if(!hasDoneGesture) hasDoneGesture = gestureRecognition(odr);
-			if (!controlPosition)
-				savedDelay = hasDoneGesture ? myEnv->getTime() : savedDelay + gestureDelay < myEnv->getTime() ? 0 : savedDelay;
-			else
-				savedDelay = 0;
-		}
-		sendNbUsers(gt);
-		Sleep(1);*/
 	}
 
 	myEnv->stop();

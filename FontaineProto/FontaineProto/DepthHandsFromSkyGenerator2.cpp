@@ -138,7 +138,7 @@ void printProgress (double percentage)
 {
 	cout << "Removing background ..." << int(percentage * 100.0) << " %\r";
 	cout.flush();
-}
+}	
 
 void DepthHandsFromSkyGenerator2::initRemoveBackground()
 {

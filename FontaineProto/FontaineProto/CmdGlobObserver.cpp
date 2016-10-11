@@ -141,11 +141,13 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	int threshold = 20;
 	float angleDifference = angleBetweenHands(rh, srh);
 	float angleMouvementDiff = angleMouvement(rh, srh);
-	/*cout << endl;
-	cout << "diff " << angleDifference << endl;
-	cout << "move " << angleMouvementDiff << endl;
-	cout << "speed " << speed.getZ() << " " << sspeed.getZ() << endl;
-	cout << endl;*/
+	
+	float originDistance = getFirstPosition(rh).distanceTo(Point3D(0.0, 0.0, 0.0));
+	float soriginDistance = getFirstPosition(srh).distanceTo(Point3D(0.0, 0.0, 0.0));
+
+	updateDebug(angleDifference, angleMouvementDiff, speed.getZ(), sspeed.getZ());
+	
+	
 	//cout << distance << "    " << sdistance << endl;
 	if( speed.getZ() < -30 && sspeed.getZ() < -30)
 	{
@@ -182,7 +184,8 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	controlPosIteration = 0;
 	}*/
 	else if (angleDifference > 0.6 &&
-		distance > 200 && sdistance > 200)
+		distance > 200 && sdistance > 200 &&
+		originDistance + 30 > soriginDistance && originDistance - 30 < soriginDistance)
 	{
 		setCmdName("ecarte");
 		setSpeed(getAngleFromHandsToCenter(rh, srh));
@@ -190,22 +193,23 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		controlPosIteration = 0;
 	}
 	else if (angleDifference < -0.6  && 
-		distance > 200 && sdistance > 200 )
+		distance > 200 && sdistance > 200 &&
+		originDistance + 30 > soriginDistance && originDistance - 30 < soriginDistance)
 	{
 		setCmdName("reserre");
 		setSpeed(getAngleFromHandsToCenter(rh, srh));
 		setAmplitude((distance + sdistance) /2.0);
 		controlPosIteration = 0;
 	}
-	else if (angleDifference < 0.1 && angleDifference > -0.1  &&
-		angleMouvementDiff < 0.1  && angleMouvementDiff > -0.1 && 
+	else if (angleDifference < 0.01 && angleDifference > -0.01  &&
+		angleMouvementDiff < 0.01  && angleMouvementDiff > -0.01 && 
 		gotSimilarHeight(rh, srh, 40) &&
 		controlPosIteration > 5)
 	{
 		Point3D last = getLastPosition(rh);
 		Point3D lasts = getLastPosition(srh);
 		setCmdName("ctrlPos");
-		setSpeed(1790-((last.getZ() + lasts.getZ()) / 2.0));
+		setSpeed(_hauteurCamera-((last.getZ() + lasts.getZ()) / 2.0));
 		setAmplitude(0.0);
 		controlPosIteration++;
 		controlPosLastTimestamp = _timestamp;
