@@ -104,13 +104,23 @@ float angleMouvement(HOrientedPoint3D* h, HOrientedPoint3D* rh)
 	Point3D first = getFirstPosition(h);
 	Point3D lasts = getLastPosition(rh);
 	Point3D firsts = getFirstPosition(rh);
-	Point3D midLast = Point3D( (last.getX() + lasts.getX())/2.0, (last.getY() + lasts.getY())/2.0, (last.getZ() + lasts.getZ())/2.0 );
-	Point3D midFirst = Point3D( (first.getX() + firsts.getX())/2.0, (first.getY() + firsts.getY())/2.0, (first.getZ() + firsts.getZ())/2.0 );
+	
+	last = Point3D( (last.getX() + lasts.getX())/2.0, (last.getY() + lasts.getY())/2.0, (last.getZ() + lasts.getZ())/2.0 );
+	lasts = Point3D( (first.getX() + firsts.getX())/2.0, (first.getY() + firsts.getY())/2.0, (first.getZ() + firsts.getZ())/2.0 );
 
-	float dot = (midLast.getX() * midFirst.getX()) + (midLast.getY() * midFirst.getY()) + (midLast.getZ() * midFirst.getZ());
-	float len1 = sqrtf((midLast.getX() * midLast.getX()) + (midLast.getY() * midLast.getY()) + (midLast.getZ() * midLast.getZ()));
-	float len2 = sqrtf((midFirst.getX() * midFirst.getX()) + (midFirst.getY() * midFirst.getY()) + (midFirst.getZ() * midFirst.getZ()));
-	return acosf(dot / (len1 * len2));
+	float dot = (last.getX() * lasts.getX()) + (last.getY() * lasts.getY()) + (last.getZ() * lasts.getZ());
+	float len1 = sqrtf((last.getX() * last.getX()) + (last.getY() * last.getY()) + (last.getZ() * last.getZ()));
+	float len2 = sqrtf((lasts.getX() * lasts.getX()) + (lasts.getY() * lasts.getY()) + (lasts.getZ() * lasts.getZ()));
+	float theta1 = acosf(dot / (len1 * len2));
+	return theta1;
+	/*Point3D last = getLastPosition(h);
+	Point3D first = getFirstPosition(h);
+	Point3D lasts = getLastPosition(rh);
+	Point3D firsts = getFirstPosition(rh);
+
+	float before = atan2((first.getY() + firsts.getY()) / 2.0, (first.getX() + firsts.getX()) / 2.0);
+	float after = atan2((last.getY() + lasts.getY()) / 2.0, (last.getX() + lasts.getX()) / 2.0);
+	return after - before;*/
 }
 
 bool gotSimilarDistanceFromOrigin(HOrientedPoint3D* rh, HOrientedPoint3D* srh, int threshold)
@@ -134,7 +144,9 @@ float getAngleFromHandsToCenter(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	Point3D lasts = getLastPosition(srh);
 	Point3D p1(0.0, 0.0, 0.0);
 	Point3D p2((last.getX() + lasts.getX())/2.0, (last.getY() + lasts.getY())/2.0, 0.0);
-	return abs(atan2(p1.getY() - p2.getY(), p1.getX() - p2.getX()) * 180 / 3.14);
+
+	float x = atan2(p2.getY() - p1.getY(), p2.getX() - p1.getX());
+	return (x > 0 ? x : (2* 3.14159 + x)) * 360 / (2* 3.14159);
 }
 
 float getAngleFromOneHandToCenter(HOrientedPoint3D* rh)
@@ -142,7 +154,7 @@ float getAngleFromOneHandToCenter(HOrientedPoint3D* rh)
 	Point3D last = getLastPosition(rh);
 	Point3D p1(0.0, 0.0, 0.0);
 	Point3D p2(last.getX(), last.getY(), 0.0);
-	return abs(atan2(p1.getY() - p2.getY(), p1.getX() - p2.getX()) * 180 / 3.14);
+	return abs(atan2(p1.getY() - p2.getY(), p1.getX() - p2.getX()) * 180 /  3.14159);
 }
 
 bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
@@ -156,7 +168,8 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	int thresholdControlPosition = 40;
 	float angleDifference = angleBetweenHands(rh, srh);
 	float angleMouvementDiff = angleMouvement(rh, srh);
-	cout << angleDifference << "\t" << angleMouvementDiff << endl;
+	cout << angleDifference << "\t" << angleMouvementDiff << "\r";
+	cout.flush();
 	if( speed.getZ() < -30 && sspeed.getZ() < -30)
 	{
 		setCmdName("baisse");
@@ -173,32 +186,16 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		setDirection(dir);
 		controlPosIteration = 0;
 	}
-	/*else if (angleDifference < 0.2 && angleDifference > -0.2 && angleMouvementDiff < -0.3 && 
-	speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
-	{
-	setCmdName("droite");
-	setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
-	setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
-	setDirection(dir);
-	controlPosIteration = 0;
-	}
-	else if (angleDifference < 0.2 && angleDifference > -0.2 && angleMouvementDiff > 0.3 && 
-	speed.getZ() < 5 && sspeed.getZ() < 5 && speed.getZ() > -5 && sspeed.getZ() > -5)
-	{
-	setCmdName("gauche");
-	setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
-	setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
-	setDirection(dir);
-	controlPosIteration = 0;
-	}*/
-	else if (angleDifference > 0.2)
+	else if (angleDifference > 0.2 &&
+		distance > 70 && sdistance > 70)
 	{
 		setCmdName("reserre");
 		setSpeed(getAngleFromHandsToCenter(rh, srh));
 		setAmplitude((distance + sdistance) /2.0);
 		controlPosIteration = 0;
 	}
-	else if (angleDifference < -0.2)
+	else if (angleDifference < -0.2 &&
+		distance > 70 && sdistance > 70)
 	{
 		setCmdName("ecarte");
 		setSpeed(getAngleFromHandsToCenter(rh, srh));
@@ -224,7 +221,25 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		controlPosIteration++;
 		controlPosLastTimestamp = _timestamp;
 	}
-		
+	/*else if (angleDifference < 0.1 && angleDifference > -0.1  &&
+		angleMouvementDiff > 0.2)
+	{
+		setCmdName("droite");
+		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
+		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
+		setDirection(dir);
+		controlPosIteration = 0;
+	}
+	else if (angleDifference < 0.1 && angleDifference > -0.1  &&
+		angleMouvementDiff < 0.2)
+	{
+		setCmdName("gauche");
+		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
+		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
+		setDirection(dir);
+		controlPosIteration = 0;
+	}*/
+
 	if(controlPosLastTimestamp + 3000 < _timestamp)
 		controlPosIteration = 0;
 	return getCmdName().compare("") == 0;
@@ -244,7 +259,7 @@ bool notSameLevel(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 
 bool CmdGlobObserver::oneHandRecognition(HOrientedPoint3D* rh)
 {
-	Point3D dir = historicDirection(rh);
+	/*Point3D dir = historicDirection(rh);
 	Point3D speed = historicSpeed(rh);
 	if(speed.getZ() < 5 && speed.getZ() > -5 &&
 		getAngleFromOneHandToCenter(rh) > 30.0)
@@ -263,7 +278,7 @@ bool CmdGlobObserver::oneHandRecognition(HOrientedPoint3D* rh)
 		setSpeed(0.0);
 		setAmplitude(0.0);
 		return true;
-	}
+	}*/
 	return false;
 }
 

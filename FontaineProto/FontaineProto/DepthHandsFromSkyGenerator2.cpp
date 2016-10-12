@@ -314,7 +314,7 @@ void DepthHandsFromSkyGenerator2::findContoursAndEllipses()
 	// premiere approche pour choper les gens autour de la fontaine
 	// remplit le tableau ellipses avec les minAreaRect de chaque personne
 	cv::erode(frame, centers, getStructuringElement(MORPH_ELLIPSE, Size(BIG_EROSION, BIG_EROSION)) );
-	cv::dilate( centers, centers, getStructuringElement(MORPH_ELLIPSE, Size(BIG_EROSION, BIG_EROSION)) ); 
+	cv::dilate( centers, centers, getStructuringElement(MORPH_ELLIPSE, Size(BIG_EROSION, BIG_EROSION)) );
 
 	// DO not process centers
 	cv::circle(centers, Point(width/2.0, height/2.0), 100, 0, -1);
@@ -323,14 +323,12 @@ void DepthHandsFromSkyGenerator2::findContoursAndEllipses()
 	for( int i = 0; i< contours.size(); i++ )
 		ellipses.push_back(minAreaRect(contours[i]));
 	
-	imshow("before", frame);
 	// détection forme des gens pour distinguer mains
 
 	// update : erodé seulement une fois ça suffit et on enlève la dilatation des 
 	cv::erode(frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(12,12)) );  //
 	cv::dilate( frame, frame, getStructuringElement(MORPH_ELLIPSE, Size(7, 7))); 
 	
-	imshow("after", frame);
 	//  contours
 	cv::findContours( frame, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
 
