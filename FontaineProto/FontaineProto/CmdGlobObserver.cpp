@@ -168,8 +168,7 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 	int thresholdControlPosition = 40;
 	float angleDifference = angleBetweenHands(rh, srh);
 	float angleMouvementDiff = angleMouvement(rh, srh);
-	cout << angleDifference << "\t" << angleMouvementDiff << "\r";
-	cout.flush();
+	
 	if( speed.getZ() < -30 && sspeed.getZ() < -30)
 	{
 		setCmdName("baisse");
@@ -186,6 +185,26 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		setDirection(dir);
 		controlPosIteration = 0;
 	}
+	/*else if (angleDifference < -0.1 &&
+		dir.getX() + 50 > sdir.getX() && dir.getX() - 50 < sdir.getX() &&
+		dir.getY() + 50 > sdir.getY() && dir.getY() - 50 < sdir.getY())
+	{
+		setCmdName("droite");
+		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
+		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
+		setDirection(dir);
+		controlPosIteration = 0;
+	}
+	else if  (angleDifference > 0.1 &&
+		dir.getX() + 50 > sdir.getX() && dir.getX() - 50 < sdir.getX() &&
+		dir.getY() + 50 > sdir.getY() && dir.getY() - 50 < sdir.getY() )
+	{
+		setCmdName("gauche");
+		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
+		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
+		setDirection(dir);
+		controlPosIteration = 0;
+	}*/
 	else if (angleDifference > 0.2 &&
 		distance > 70 && sdistance > 70)
 	{
@@ -221,24 +240,6 @@ bool CmdGlobObserver::recognition(HOrientedPoint3D* rh, HOrientedPoint3D* srh)
 		controlPosIteration++;
 		controlPosLastTimestamp = _timestamp;
 	}
-	/*else if (angleDifference < 0.1 && angleDifference > -0.1  &&
-		angleMouvementDiff > 0.2)
-	{
-		setCmdName("droite");
-		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
-		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
-		setDirection(dir);
-		controlPosIteration = 0;
-	}
-	else if (angleDifference < 0.1 && angleDifference > -0.1  &&
-		angleMouvementDiff < 0.2)
-	{
-		setCmdName("gauche");
-		setAmplitude((abs(dir.getY()) + abs(sdir.getY()))/2.0);
-		setSpeed((abs(speed.getY()) + abs(sspeed.getY()))/2.0);
-		setDirection(dir);
-		controlPosIteration = 0;
-	}*/
 
 	if(controlPosLastTimestamp + 3000 < _timestamp)
 		controlPosIteration = 0;
